@@ -13,18 +13,19 @@
         body { font-family: 'Inter', sans-serif; background: #0f0f0f; color: #e0e0e0; }
         .font-display { font-family: 'Poppins', sans-serif; }
         :root { --primary: #FF6B35; --bg-card: #1a1a2e; --bg-sidebar: #16162b; --border: #2a2a4a; --text-secondary: #a0a0c0; }
-
-        /* LOGIN SCREEN */
         #loginScreen { position: fixed; inset: 0; background: linear-gradient(135deg, #0f0f0f 0%, #1a1a2e 50%, #0f0f0f 100%); z-index: 9999; display: flex; align-items: center; justify-content: center; }
-        #loginScreen.hidden { display: none; }
+        #loginScreen.hidden { display: none !important; }
         .login-box { background: var(--bg-card); border: 1px solid var(--border); border-radius: 24px; padding: 48px; width: 90%; max-width: 400px; text-align: center; }
         .login-icon { width: 80px; height: 80px; background: linear-gradient(135deg, #FF6B35, #FF8F5E); border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 36px; margin: 0 auto 24px; }
-        .login-input { width: 100%; padding: 14px 16px; background: #0f0f0f; border: 1px solid var(--border); border-radius: 12px; color: white; font-size: 16px; margin-bottom: 12px; text-align: center; }
+        .login-input-wrap { position: relative; width: 100%; margin-bottom: 12px; }
+        .login-input { width: 100%; padding: 14px 48px 14px 16px; background: #0f0f0f; border: 1px solid var(--border); border-radius: 12px; color: white; font-size: 16px; }
         .login-input:focus { outline: none; border-color: var(--primary); }
+        .login-input::placeholder { color: #555; }
+        .eye-btn { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #666; cursor: pointer; font-size: 18px; padding: 4px; }
+        .eye-btn:hover { color: var(--primary); }
         .login-btn { width: 100%; padding: 14px; background: linear-gradient(135deg, #FF6B35, #FF8F5E); color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: 700; cursor: pointer; transition: all 0.2s; margin-top: 8px; }
         .login-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(255,107,53,0.4); }
         .login-error { color: #EF4444; font-size: 13px; margin-top: 8px; display: none; }
-
         .sidebar { position: fixed; left: 0; top: 0; bottom: 0; width: 260px; background: var(--bg-sidebar); border-right: 1px solid var(--border); z-index: 50; overflow-y: auto; }
         .main-content { margin-left: 260px; min-height: 100vh; }
         .nav-item { display: flex; align-items: center; gap: 12px; padding: 12px 20px; cursor: pointer; transition: all 0.2s; border-left: 3px solid transparent; color: var(--text-secondary); font-size: 14px; font-weight: 500; }
@@ -91,7 +92,6 @@
         .whatsapp-tip { background: linear-gradient(135deg, #25D366, #128C7E); color: white; border-radius: 12px; padding: 16px; margin: 12px 0; }
         .empty-state { text-align: center; padding: 40px; color: var(--text-secondary); }
         .hamburger { display: none; position: fixed; top: 16px; left: 16px; z-index: 60; background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 8px; cursor: pointer; }
-        .logout-btn { position: absolute; bottom: 20px; right: 20px; }
         @media (max-width: 768px) {
             .sidebar { transform: translateX(-260px); transition: transform 0.3s; }
             .sidebar.open { transform: translateX(0); }
@@ -109,9 +109,17 @@
             <div class="login-icon">🍕</div>
             <h2 class="font-display" style="font-size: 28px; color: #FF6B35; margin-bottom: 4px;">Metele</h2>
             <p style="color: #666; margin-bottom: 32px;">Sistema de Gestión</p>
-            <input type="text" class="login-input" id="loginUser" placeholder="Usuario" onkeydown="if(event.key==='Enter')doLogin()">
-            <input type="password" class="login-input" id="loginPass" placeholder="Contraseña" onkeydown="if(event.key==='Enter')doLogin()">
-            <button class="login-btn" onclick="doLogin()">Ingresar</button>
+            <div class="login-input-wrap">
+                <input type="text" class="login-input" id="loginUser" placeholder="Usuario" autocomplete="off">
+            </div>
+            <div class="login-input-wrap">
+                <input type="password" class="login-input" id="loginPass" placeholder="Contraseña">
+                <button type="button" class="eye-btn" id="eyeBtn" onclick="togglePass()" tabindex="-1">
+                    <svg id="eyeIcon" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                    <svg id="eyeOffIcon" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="section-hidden"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                </button>
+            </div>
+            <button class="login-btn" id="loginBtn" onclick="doLogin()">Ingresar</button>
             <p class="login-error" id="loginError">Usuario o contraseña incorrectos</p>
         </div>
     </div>
@@ -163,13 +171,8 @@
         <section id="section-dashboard">
             <div style="padding: 24px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;" class="dashboard-header">
-                    <div>
-                        <h2 class="font-display" style="font-size: 28px; color: white; margin-bottom: 4px;">Dashboard</h2>
-                        <p style="color: #666;">Resumen general</p>
-                    </div>
-                    <button class="btn btn-primary" onclick="openModal('modalVenta')" style="font-size: 15px; padding: 12px 24px;">
-                        ➕ Nueva Venta
-                    </button>
+                    <div><h2 class="font-display" style="font-size: 28px; color: white; margin-bottom: 4px;">Dashboard</h2><p style="color: #666;">Resumen general</p></div>
+                    <button class="btn btn-primary" onclick="openModal('modalVenta')" style="font-size: 15px; padding: 12px 24px;">➕ Nueva Venta</button>
                 </div>
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;">
                     <div class="card kpi-card orange"><p style="font-size: 12px; color: #666;">Ventas del Mes</p><p id="kpiVentasMes" style="font-size: 32px; font-weight: 800; color: white;">$0</p></div>
@@ -187,10 +190,7 @@
         </section>
         <section id="section-ventas" class="section-hidden">
             <div style="padding: 24px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
-                    <h2 class="font-display" style="font-size: 28px; color: white;">🍕 Ventas</h2>
-                    <button class="btn btn-primary" onclick="openModal('modalVenta')">➕ Nueva Venta</button>
-                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;"><h2 class="font-display" style="font-size: 28px; color: white;">🍕 Ventas</h2><button class="btn btn-primary" onclick="openModal('modalVenta')">➕ Nueva Venta</button></div>
                 <div style="display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap;">
                     <div class="search-input" style="flex:1"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg><input type="text" class="form-input" placeholder="Buscar..." id="searchVenta" oninput="renderVentas()"></div>
                     <select class="form-select" id="filterVentaTipo" onchange="renderVentas()" style="width:auto"><option value="">Todos</option><option value="Muzzarella">Muzzarella</option><option value="Especial">Especial</option></select>
@@ -200,20 +200,14 @@
         </section>
         <section id="section-clientes" class="section-hidden">
             <div style="padding: 24px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
-                    <h2 class="font-display" style="font-size: 28px; color: white;">👥 Clientes</h2>
-                    <button class="btn btn-primary" onclick="openModal('modalCliente')">➕ Nuevo Cliente</button>
-                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;"><h2 class="font-display" style="font-size: 28px; color: white;">👥 Clientes</h2><button class="btn btn-primary" onclick="openModal('modalCliente')">➕ Nuevo Cliente</button></div>
                 <div class="search-input" style="margin-bottom: 16px;"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg><input type="text" class="form-input" placeholder="Buscar cliente..." id="searchCliente" oninput="renderClientes()"></div>
                 <div class="card"><div class="table-container"><table><thead><tr><th>Nombre</th><th>Tipo</th><th>Teléfono</th><th>Dirección</th><th>Compras</th><th>Deuda</th><th>Acciones</th></tr></thead><tbody id="tablaClientes"></tbody></table></div></div>
             </div>
         </section>
         <section id="section-deudas" class="section-hidden">
             <div style="padding: 24px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
-                    <h2 class="font-display" style="font-size: 28px; color: white;">⏳ Deudas y Pagos</h2>
-                    <button class="btn btn-primary" onclick="openModal('modalPago')">💵 Registrar Pago</button>
-                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;"><h2 class="font-display" style="font-size: 28px; color: white;">⏳ Deudas y Pagos</h2><button class="btn btn-primary" onclick="openModal('modalPago')">💵 Registrar Pago</button></div>
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;">
                     <div class="card kpi-card yellow"><p style="font-size: 12px; color: #666;">Total Deudas</p><p id="kpiTotalDeudas" style="font-size: 28px; font-weight: 800; color: #F59E0B;">$0</p></div>
                     <div class="card kpi-card red"><p style="font-size: 12px; color: #666;">Vencidas</p><p id="kpiDeudasVencidas" style="font-size: 28px; font-weight: 800; color: #EF4444;">$0</p></div>
@@ -225,20 +219,14 @@
         </section>
         <section id="section-insumos" class="section-hidden">
             <div style="padding: 24px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
-                    <h2 class="font-display" style="font-size: 28px; color: white;">📦 Insumos y Costos</h2>
-                    <button class="btn btn-primary" onclick="openModal('modalInsumo')">➕ Nuevo Insumo</button>
-                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;"><h2 class="font-display" style="font-size: 28px; color: white;">📦 Insumos y Costos</h2><button class="btn btn-primary" onclick="openModal('modalInsumo')">➕ Nuevo Insumo</button></div>
                 <div class="card" style="margin-bottom: 24px;"><h3 style="color: white; margin-bottom: 16px;">💰 Costo por Pizza</h3><div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px;" id="costoPorPizza"></div></div>
                 <div class="card"><div class="table-container"><table><thead><tr><th>Nombre</th><th>Marca</th><th>Unidad</th><th>Precio</th><th>Stock</th><th>Uso/Pizza</th><th>Costo/Pizza</th><th>Acciones</th></tr></thead><tbody id="tablaInsumos"></tbody></table></div></div>
             </div>
         </section>
         <section id="section-marcas" class="section-hidden">
             <div style="padding: 24px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
-                    <h2 class="font-display" style="font-size: 28px; color: white;">🏷️ Registro de Marcas</h2>
-                    <button class="btn btn-primary" onclick="openModal('modalMarca')">➕ Nueva Marca</button>
-                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;"><h2 class="font-display" style="font-size: 28px; color: white;">🏷️ Registro de Marcas</h2><button class="btn btn-primary" onclick="openModal('modalMarca')">➕ Nueva Marca</button></div>
                 <div class="card"><div class="table-container"><table><thead><tr><th>Marca</th><th>Insumo</th><th>Calidad</th><th>Precio</th><th>Proveedor</th><th>Notas</th><th>Acciones</th></tr></thead><tbody id="tablaMarcas"></tbody></table></div></div>
             </div>
         </section>
@@ -260,10 +248,9 @@
         <section id="section-guia" class="section-hidden">
             <div style="padding: 24px;">
                 <h2 class="font-display" style="font-size: 28px; color: white; margin-bottom: 24px;">💡 Guía</h2>
-                <div class="tip-card"><h4>📱 WhatsApp Business</h4><ul><li><strong style="color:white;">Etiquetas:</strong> "Almacén", "Deudor", "Pagó".</li><li><strong style="color:white;">Respuestas rápidas:</strong> Precios automáticos.</li><li><strong style="color:white;">Catálogo:</strong> Fotos con precios.</li></ul></div>
+                <div class="tip-card"><h4>📱 WhatsApp Business</h4><ul><li><strong style="color:white;">Etiquetas:</strong> "Almacén", "Deudor", "Pagó".</li><li><strong style="color:white;">Respuestas rápidas:</strong> Precios automáticos.</li></ul></div>
                 <div class="whatsapp-tip"><strong> Plantilla:</strong><br>"¡Hola! Soy de Metele 🍕<br>• [Tipo] x[Cantidad] = $[Total]<br>• Entrega: [Fecha]<br>¿Confirmás?"</div>
                 <div class="tip-card"><h4>💰 Control Financiero</h4><ul><li><strong style="color:white;">Registro diario</strong> de cada venta.</li><li><strong style="color:white;">Separa cajas:</strong> insumos vs ganancias.</li><li><strong style="color:white;">Cobro fijo:</strong> ej: viernes a almacenes.</li></ul></div>
-                <div class="tip-card"><h4>🔧 Flujo de Trabajo</h4><ul><li><strong style="color:white;">Mañana:</strong> Preparar → Registrar "pendiente".</li><li><strong style="color:white;">Entrega:</strong> Cobrar → "pagado".</li><li><strong style="color:white;">Viernes:</strong> Revisar deudas → Recordatorios.</li></ul></div>
             </div>
         </section>
     </main>
@@ -359,6 +346,24 @@
 
     <script>
     // ==========================================
+    // PASSWORD TOGGLE
+    // ==========================================
+    function togglePass() {
+        var inp = document.getElementById('loginPass');
+        var eye = document.getElementById('eyeIcon');
+        var eyeOff = document.getElementById('eyeOffIcon');
+        if (inp.type === 'password') {
+            inp.type = 'text';
+            eye.classList.add('section-hidden');
+            eyeOff.classList.remove('section-hidden');
+        } else {
+            inp.type = 'password';
+            eye.classList.remove('section-hidden');
+            eyeOff.classList.add('section-hidden');
+        }
+    }
+
+    // ==========================================
     // LOGIN
     // ==========================================
     var AUTH_USER = 'metele';
@@ -368,10 +373,10 @@
         var u = document.getElementById('loginUser').value.trim();
         var p = document.getElementById('loginPass').value;
         if (u === AUTH_USER && p === AUTH_PASS) {
-            sessionStorage.setItem('metele_auth', 'true');
             document.getElementById('loginScreen').classList.add('hidden');
             document.getElementById('sidebar').classList.remove('section-hidden');
             document.getElementById('mainContent').classList.remove('section-hidden');
+            document.getElementById('loginError').style.display = 'none';
             updateDashboard();
         } else {
             document.getElementById('loginError').style.display = 'block';
@@ -382,23 +387,21 @@
 
     function doLogout() {
         if (confirm('¿Cerrar sesión?')) {
-            sessionStorage.removeItem('metele_auth');
             document.getElementById('loginScreen').classList.remove('hidden');
             document.getElementById('sidebar').classList.add('section-hidden');
             document.getElementById('mainContent').classList.add('section-hidden');
             document.getElementById('loginUser').value = '';
             document.getElementById('loginPass').value = '';
             document.getElementById('loginError').style.display = 'none';
+            document.getElementById('loginPass').type = 'password';
+            document.getElementById('eyeIcon').classList.remove('section-hidden');
+            document.getElementById('eyeOffIcon').classList.add('section-hidden');
         }
     }
 
-    // Check if already logged in
-    if (sessionStorage.getItem('metele_auth') === 'true') {
-        document.getElementById('loginScreen').classList.add('hidden');
-        document.getElementById('sidebar').classList.remove('section-hidden');
-        document.getElementById('mainContent').classList.remove('section-hidden');
-        setTimeout(function() { updateDashboard(); }, 100);
-    }
+    // Enter key on login fields
+    document.getElementById('loginUser').addEventListener('keydown', function(e) { if (e.key === 'Enter') doLogin(); });
+    document.getElementById('loginPass').addEventListener('keydown', function(e) { if (e.key === 'Enter') doLogin(); });
 
     // ==========================================
     // SUPABASE CONFIG
@@ -992,24 +995,11 @@
         ventas.forEach(function(v) { tipos[v.tipo] = (tipos[v.tipo] || 0) + v.total; });
         chartVentasTipo = new Chart(document.getElementById('chartVentasTipo'), {
             type: 'bar',
-             {
+            data: {
                 labels: Object.keys(tipos),
-                datasets: [{
-                    label: 'Ventas',
-                     Object.values(tipos),
-                    backgroundColor: ['#FF6B35', '#FFD700'],
-                    borderRadius: 8
-                }]
+                datasets: [{ label: 'Ventas', data: Object.values(tipos), backgroundColor: ['#FF6B35', '#FFD700'], borderRadius: 8 }]
             },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
-                scales: {
-                    y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#a0a0c0' } },
-                    x: { grid: { display: false }, ticks: { color: '#a0a0c0' } }
-                }
-            }
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#a0a0c0' } }, x: { grid: { display: false }, ticks: { color: '#a0a0c0' } } } }
         });
         var canales = {};
         ventas.forEach(function(v) { canales[v.canal] = (canales[v.canal] || 0) + v.total; });
@@ -1017,16 +1007,9 @@
             type: 'doughnut',
             data: {
                 labels: Object.keys(canales),
-                datasets: [{
-                     Object.values(canales),
-                    backgroundColor: ['#3B82F6', '#A855F7']
-                }]
+                datasets: [{ data: Object.values(canales), backgroundColor: ['#3B82F6', '#A855F7'] }]
             },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { position: 'bottom', labels: { color: '#a0a0c0' } } }
-            }
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: '#a0a0c0' } } } }
         });
 
         var dv = document.getElementById('dashboardVentas');
@@ -1066,34 +1049,16 @@
         var clientes = await dbGet('clientes');
         var insumos = await dbGet('insumos');
         var meses = {};
-        ventas.forEach(function(v) {
-            var m = v.fecha ? v.fecha.substring(0, 7) : 'Sin fecha';
-            meses[m] = (meses[m] || 0) + v.total;
-        });
+        ventas.forEach(function(v) { var m = v.fecha ? v.fecha.substring(0, 7) : 'Sin fecha'; meses[m] = (meses[m] || 0) + v.total; });
         var sk = Object.keys(meses).sort();
         if (chartMensuales) chartMensuales.destroy();
         chartMensuales = new Chart(document.getElementById('chartVentasMensuales'), {
             type: 'line',
             data: {
                 labels: sk,
-                datasets: [{
-                    label: 'Ventas',
-                     sk.map(function(m) { return meses[m]; }),
-                    borderColor: '#FF6B35',
-                    backgroundColor: 'rgba(255,107,53,0.1)',
-                    fill: true,
-                    tension: 0.4
-                }]
+                datasets: [{ label: 'Ventas', data: sk.map(function(m) { return meses[m]; }), borderColor: '#FF6B35', backgroundColor: 'rgba(255,107,53,0.1)', fill: true, tension: 0.4 }]
             },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { labels: { color: '#a0a0c0' } } },
-                scales: {
-                    y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#a0a0c0' } },
-                    x: { grid: { display: false }, ticks: { color: '#a0a0c0' } }
-                }
-            }
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#a0a0c0' } } }, scales: { y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#a0a0c0' } }, x: { grid: { display: false }, ticks: { color: '#a0a0c0' } } } }
         });
         var ti = ventas.reduce(function(s, v) { return s + v.total; }, 0);
         var ci = 0;
@@ -1103,52 +1068,23 @@
         document.getElementById('rentabilidadContent').innerHTML = '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:16px;"><div style="background:#0f0f0f;padding:16px;border-radius:12px;"><p style="color:#666;font-size:12px;">Ingresos</p><p style="font-size:24px;font-weight:800;color:white">$' + ti.toLocaleString() + '</p></div><div style="background:#0f0f0f;padding:16px;border-radius:12px;"><p style="color:#666;font-size:12px;">Costo</p><p style="font-size:24px;font-weight:800;color:#EF4444">$' + ci.toLocaleString() + '</p></div><div style="background:#0f0f0f;padding:16px;border-radius:12px;"><p style="color:#666;font-size:12px;">Ganancia</p><p style="font-size:24px;font-weight:800;color:#22C55E">$' + gn.toLocaleString() + '</p></div><div style="background:#0f0f0f;padding:16px;border-radius:12px;"><p style="color:#666;font-size:12px;">Margen</p><p style="font-size:24px;font-weight:800;color:#FFD700">' + mg + '%</p></div></div><div style="height:24px;background:#0f0f0f;border-radius:12px;overflow:hidden;"><div style="width:' + mg + '%;height:100%;background:linear-gradient(90deg,#22C55E,#4ADE80);border-radius:12px;"></div></div>';
         var cv = {};
         ventas.forEach(function(v) { cv[v.clienteId] = (cv[v.clienteId] || 0) + v.total; });
-        var top = Object.entries(cv).map(function(entry) {
-            var id = entry[0], t = entry[1];
-            var nombre = 'N/A';
-            for (var i = 0; i < clientes.length; i++) { if (clientes[i].id === id) { nombre = clientes[i].nombre; break; } }
-            return { n: nombre, t: t };
-        }).sort(function(a, b) { return b.t - a.t; }).slice(0, 5);
+        var top = Object.entries(cv).map(function(entry) { var id = entry[0], t = entry[1]; var nombre = 'N/A'; for (var i = 0; i < clientes.length; i++) { if (clientes[i].id === id) { nombre = clientes[i].nombre; break; } } return { n: nombre, t: t }; }).sort(function(a, b) { return b.t - a.t; }).slice(0, 5);
         if (chartClientesTop) chartClientesTop.destroy();
         chartClientesTop = new Chart(document.getElementById('chartClientesTop'), {
             type: 'bar',
-             {
+            data: {
                 labels: top.map(function(x) { return x.n; }),
-                datasets: [{
-                    label: 'Compras',
-                    data: top.map(function(x) { return x.t; }),
-                    backgroundColor: ['#FF6B35', '#FF8F5E', '#FFB088', '#FFD0B5', '#FFE8D8'],
-                    borderRadius: 8
-                }]
+                datasets: [{ label: 'Compras', data: top.map(function(x) { return x.t; }), backgroundColor: ['#FF6B35', '#FF8F5E', '#FFB088', '#FFD0B5', '#FFE8D8'], borderRadius: 8 }]
             },
-            options: {
-                indexAxis: 'y',
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
-                scales: {
-                    x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#a0a0c0' } },
-                    y: { grid: { display: false }, ticks: { color: '#a0a0c0' } }
-                }
-            }
+            options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#a0a0c0' } }, y: { grid: { display: false }, ticks: { color: '#a0a0c0' } } } }
         });
         var pv = {};
         ventas.forEach(function(v) { pv[v.tipo] = (pv[v.tipo] || 0) + v.cantidad; });
         if (chartProductos) chartProductos.destroy();
         chartProductos = new Chart(document.getElementById('chartProductos'), {
             type: 'pie',
-             {
-                labels: Object.keys(pv),
-                datasets: [{
-                     Object.values(pv),
-                    backgroundColor: ['#FF6B35', '#FFD700', '#22C55E', '#3B82F6']
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { position: 'bottom', labels: { color: '#a0a0c0' } } }
-            }
+            data: { labels: Object.keys(pv), datasets: [{ data: Object.values(pv), backgroundColor: ['#FF6B35', '#FFD700', '#22C55E', '#3B82F6'] }] },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: '#a0a0c0' } } } }
         });
     }
 
@@ -1216,10 +1152,9 @@
         notify('¡Bienvenido a Metele!', 'info');
     }
 
+    // Start app
     seed().then(function() {
-        if (sessionStorage.getItem('metele_auth') === 'true') {
-            updateDashboard();
-        }
+        // Don't auto-show dashboard, wait for login
     });
     </script>
 </body>
