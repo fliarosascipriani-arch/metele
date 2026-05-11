@@ -13,6 +13,18 @@
         body { font-family: 'Inter', sans-serif; background: #0f0f0f; color: #e0e0e0; }
         .font-display { font-family: 'Poppins', sans-serif; }
         :root { --primary: #FF6B35; --bg-card: #1a1a2e; --bg-sidebar: #16162b; --border: #2a2a4a; --text-secondary: #a0a0c0; }
+
+        /* LOGIN SCREEN */
+        #loginScreen { position: fixed; inset: 0; background: linear-gradient(135deg, #0f0f0f 0%, #1a1a2e 50%, #0f0f0f 100%); z-index: 9999; display: flex; align-items: center; justify-content: center; }
+        #loginScreen.hidden { display: none; }
+        .login-box { background: var(--bg-card); border: 1px solid var(--border); border-radius: 24px; padding: 48px; width: 90%; max-width: 400px; text-align: center; }
+        .login-icon { width: 80px; height: 80px; background: linear-gradient(135deg, #FF6B35, #FF8F5E); border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 36px; margin: 0 auto 24px; }
+        .login-input { width: 100%; padding: 14px 16px; background: #0f0f0f; border: 1px solid var(--border); border-radius: 12px; color: white; font-size: 16px; margin-bottom: 12px; text-align: center; }
+        .login-input:focus { outline: none; border-color: var(--primary); }
+        .login-btn { width: 100%; padding: 14px; background: linear-gradient(135deg, #FF6B35, #FF8F5E); color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: 700; cursor: pointer; transition: all 0.2s; margin-top: 8px; }
+        .login-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(255,107,53,0.4); }
+        .login-error { color: #EF4444; font-size: 13px; margin-top: 8px; display: none; }
+
         .sidebar { position: fixed; left: 0; top: 0; bottom: 0; width: 260px; background: var(--bg-sidebar); border-right: 1px solid var(--border); z-index: 50; overflow-y: auto; }
         .main-content { margin-left: 260px; min-height: 100vh; }
         .nav-item { display: flex; align-items: center; gap: 12px; padding: 12px 20px; cursor: pointer; transition: all 0.2s; border-left: 3px solid transparent; color: var(--text-secondary); font-size: 14px; font-weight: 500; }
@@ -79,18 +91,34 @@
         .whatsapp-tip { background: linear-gradient(135deg, #25D366, #128C7E); color: white; border-radius: 12px; padding: 16px; margin: 12px 0; }
         .empty-state { text-align: center; padding: 40px; color: var(--text-secondary); }
         .hamburger { display: none; position: fixed; top: 16px; left: 16px; z-index: 60; background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 8px; cursor: pointer; }
+        .logout-btn { position: absolute; bottom: 20px; right: 20px; }
         @media (max-width: 768px) {
             .sidebar { transform: translateX(-260px); transition: transform 0.3s; }
             .sidebar.open { transform: translateX(0); }
             .main-content { margin-left: 0 !important; }
             .hamburger { display: block; }
+            .dashboard-header { flex-direction: column !important; align-items: flex-start !important; }
         }
     </style>
 </head>
 <body>
+
+    <!-- LOGIN SCREEN -->
+    <div id="loginScreen">
+        <div class="login-box">
+            <div class="login-icon">🍕</div>
+            <h2 class="font-display" style="font-size: 28px; color: #FF6B35; margin-bottom: 4px;">Metele</h2>
+            <p style="color: #666; margin-bottom: 32px;">Sistema de Gestión</p>
+            <input type="text" class="login-input" id="loginUser" placeholder="Usuario" onkeydown="if(event.key==='Enter')doLogin()">
+            <input type="password" class="login-input" id="loginPass" placeholder="Contraseña" onkeydown="if(event.key==='Enter')doLogin()">
+            <button class="login-btn" onclick="doLogin()">Ingresar</button>
+            <p class="login-error" id="loginError">Usuario o contraseña incorrectos</p>
+        </div>
+    </div>
+
     <div id="notification" class="notification"></div>
     <button class="hamburger" onclick="toggleSidebar()">☰</button>
-    <aside class="sidebar" id="sidebar">
+    <aside class="sidebar section-hidden" id="sidebar">
         <div style="padding: 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px;">
             <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #FF6B35, #FF8F5E); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px;">🍕</div>
             <div><h1 class="font-display" style="font-size: 20px; color: #FF6B35;">Metele</h1><p style="font-size: 10px; color: #666;">Sistema de Gestión</p></div>
@@ -127,13 +155,22 @@
                 <button class="btn btn-secondary btn-sm" style="flex:1" onclick="document.getElementById('importFile').click()">📤 Importar</button>
             </div>
             <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)">
+            <button class="btn btn-danger btn-sm" style="width:100%;margin-top:12px;justify-content:center;" onclick="doLogout()">🔒 Cerrar sesión</button>
         </div>
     </aside>
-    <main class="main-content">
+
+    <main class="main-content section-hidden" id="mainContent">
         <section id="section-dashboard">
             <div style="padding: 24px;">
-                <h2 class="font-display" style="font-size: 28px; color: white; margin-bottom: 4px;">Dashboard</h2>
-                <p style="color: #666; margin-bottom: 24px;">Resumen general</p>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;" class="dashboard-header">
+                    <div>
+                        <h2 class="font-display" style="font-size: 28px; color: white; margin-bottom: 4px;">Dashboard</h2>
+                        <p style="color: #666;">Resumen general</p>
+                    </div>
+                    <button class="btn btn-primary" onclick="openModal('modalVenta')" style="font-size: 15px; padding: 12px 24px;">
+                        ➕ Nueva Venta
+                    </button>
+                </div>
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;">
                     <div class="card kpi-card orange"><p style="font-size: 12px; color: #666;">Ventas del Mes</p><p id="kpiVentasMes" style="font-size: 32px; font-weight: 800; color: white;">$0</p></div>
                     <div class="card kpi-card green"><p style="font-size: 12px; color: #666;">Ganancia Neta</p><p id="kpiGanancia" style="font-size: 32px; font-weight: 800; color: #22C55E;">$0</p></div>
@@ -223,10 +260,10 @@
         <section id="section-guia" class="section-hidden">
             <div style="padding: 24px;">
                 <h2 class="font-display" style="font-size: 28px; color: white; margin-bottom: 24px;">💡 Guía</h2>
-                <div class="tip-card"><h4>📱 WhatsApp Business</h4><ul><li><strong style="color:white;">Etiquetas:</strong> "Almacén", "Deudor", "Pagó".</li><li><strong style="color:white;">Respuestas rápidas:</strong> Precios y horarios automáticos.</li><li><strong style="color:white;">Catálogo:</strong> Fotos de tus pizzas con precios.</li></ul></div>
-                <div class="whatsapp-tip"><strong> Plantilla de pedido:</strong><br>"¡Hola! Soy de Metele 🍕. Resumen:<br>• [Tipo] x[Cantidad] = $[Total]<br>• Entrega: [Fecha]<br>¿Confirmás? ¡Gracias!"</div>
-                <div class="tip-card"><h4>💰 Control Financiero</h4><ul><li><strong style="color:white;">Registro diario:</strong> Anotá cada venta al momento.</li><li><strong style="color:white;">Separa cajas:</strong> Insumos vs ganancias.</li><li><strong style="color:white;">Cobro fijo:</strong> Ej: cada viernes a almacenes.</li></ul></div>
-                <div class="tip-card"><h4>🔧 Flujo de Trabajo</h4><ul><li><strong style="color:white;">Mañana:</strong> Preparar pedidos → Registrar "pendiente".</li><li><strong style="color:white;">Entrega:</strong> Cobrar → Registrar "pagado".</li><li><strong style="color:white;">Viernes:</strong> Revisar deudas → Recordatorios WhatsApp.</li></ul></div>
+                <div class="tip-card"><h4>📱 WhatsApp Business</h4><ul><li><strong style="color:white;">Etiquetas:</strong> "Almacén", "Deudor", "Pagó".</li><li><strong style="color:white;">Respuestas rápidas:</strong> Precios automáticos.</li><li><strong style="color:white;">Catálogo:</strong> Fotos con precios.</li></ul></div>
+                <div class="whatsapp-tip"><strong> Plantilla:</strong><br>"¡Hola! Soy de Metele 🍕<br>• [Tipo] x[Cantidad] = $[Total]<br>• Entrega: [Fecha]<br>¿Confirmás?"</div>
+                <div class="tip-card"><h4>💰 Control Financiero</h4><ul><li><strong style="color:white;">Registro diario</strong> de cada venta.</li><li><strong style="color:white;">Separa cajas:</strong> insumos vs ganancias.</li><li><strong style="color:white;">Cobro fijo:</strong> ej: viernes a almacenes.</li></ul></div>
+                <div class="tip-card"><h4>🔧 Flujo de Trabajo</h4><ul><li><strong style="color:white;">Mañana:</strong> Preparar → Registrar "pendiente".</li><li><strong style="color:white;">Entrega:</strong> Cobrar → "pagado".</li><li><strong style="color:white;">Viernes:</strong> Revisar deudas → Recordatorios.</li></ul></div>
             </div>
         </section>
     </main>
@@ -322,7 +359,49 @@
 
     <script>
     // ==========================================
-    // CONFIGURACIÓN
+    // LOGIN
+    // ==========================================
+    var AUTH_USER = 'metele';
+    var AUTH_PASS = 'Rosas216';
+
+    function doLogin() {
+        var u = document.getElementById('loginUser').value.trim();
+        var p = document.getElementById('loginPass').value;
+        if (u === AUTH_USER && p === AUTH_PASS) {
+            sessionStorage.setItem('metele_auth', 'true');
+            document.getElementById('loginScreen').classList.add('hidden');
+            document.getElementById('sidebar').classList.remove('section-hidden');
+            document.getElementById('mainContent').classList.remove('section-hidden');
+            updateDashboard();
+        } else {
+            document.getElementById('loginError').style.display = 'block';
+            document.getElementById('loginPass').value = '';
+            document.getElementById('loginPass').focus();
+        }
+    }
+
+    function doLogout() {
+        if (confirm('¿Cerrar sesión?')) {
+            sessionStorage.removeItem('metele_auth');
+            document.getElementById('loginScreen').classList.remove('hidden');
+            document.getElementById('sidebar').classList.add('section-hidden');
+            document.getElementById('mainContent').classList.add('section-hidden');
+            document.getElementById('loginUser').value = '';
+            document.getElementById('loginPass').value = '';
+            document.getElementById('loginError').style.display = 'none';
+        }
+    }
+
+    // Check if already logged in
+    if (sessionStorage.getItem('metele_auth') === 'true') {
+        document.getElementById('loginScreen').classList.add('hidden');
+        document.getElementById('sidebar').classList.remove('section-hidden');
+        document.getElementById('mainContent').classList.remove('section-hidden');
+        setTimeout(function() { updateDashboard(); }, 100);
+    }
+
+    // ==========================================
+    // SUPABASE CONFIG
     // ==========================================
     var SB_URL = 'https://zundvvavprjvqupynryg.supabase.co';
     var SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp1bmR2dmF2cHJqdnF1cHlucnlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg0NTE2MDUsImV4cCI6MjA5NDAyNzYwNX0.0w7mYaBw2bgDLTjZJjYn8Fo_gvks_nGcuMNj5L8lpfM';
@@ -498,14 +577,7 @@
     }
     async function saveCliente() {
         var id = document.getElementById('clienteId').value;
-        var d = {
-            id: id || genId(),
-            nombre: document.getElementById('clienteNombre').value.trim(),
-            tipo: document.getElementById('clienteTipo').value,
-            telefono: document.getElementById('clienteTelefono').value.trim(),
-            direccion: document.getElementById('clienteDireccion').value.trim(),
-            notas: document.getElementById('clienteNotas').value.trim()
-        };
+        var d = { id: id || genId(), nombre: document.getElementById('clienteNombre').value.trim(), tipo: document.getElementById('clienteTipo').value, telefono: document.getElementById('clienteTelefono').value.trim(), direccion: document.getElementById('clienteDireccion').value.trim(), notas: document.getElementById('clienteNotas').value.trim() };
         if (!d.nombre) { notify('Nombre obligatorio', 'error'); return; }
         var ok = id ? await dbUpdate('clientes', id, d) : await dbInsert('clientes', d);
         if (ok) { closeModal('modalCliente'); clearClienteForm(); renderClientes(); notify(id ? 'Actualizado' : 'Registrado'); }
@@ -920,11 +992,11 @@
         ventas.forEach(function(v) { tipos[v.tipo] = (tipos[v.tipo] || 0) + v.total; });
         chartVentasTipo = new Chart(document.getElementById('chartVentasTipo'), {
             type: 'bar',
-            data: {
+             {
                 labels: Object.keys(tipos),
                 datasets: [{
                     label: 'Ventas',
-                    data: Object.values(tipos),
+                     Object.values(tipos),
                     backgroundColor: ['#FF6B35', '#FFD700'],
                     borderRadius: 8
                 }]
@@ -946,7 +1018,7 @@
             data: {
                 labels: Object.keys(canales),
                 datasets: [{
-                    data: Object.values(canales),
+                     Object.values(canales),
                     backgroundColor: ['#3B82F6', '#A855F7']
                 }]
             },
@@ -1006,7 +1078,7 @@
                 labels: sk,
                 datasets: [{
                     label: 'Ventas',
-                    data: sk.map(function(m) { return meses[m]; }),
+                     sk.map(function(m) { return meses[m]; }),
                     borderColor: '#FF6B35',
                     backgroundColor: 'rgba(255,107,53,0.1)',
                     fill: true,
@@ -1040,7 +1112,7 @@
         if (chartClientesTop) chartClientesTop.destroy();
         chartClientesTop = new Chart(document.getElementById('chartClientesTop'), {
             type: 'bar',
-            data: {
+             {
                 labels: top.map(function(x) { return x.n; }),
                 datasets: [{
                     label: 'Compras',
@@ -1065,10 +1137,10 @@
         if (chartProductos) chartProductos.destroy();
         chartProductos = new Chart(document.getElementById('chartProductos'), {
             type: 'pie',
-            data: {
+             {
                 labels: Object.keys(pv),
                 datasets: [{
-                    data: Object.values(pv),
+                     Object.values(pv),
                     backgroundColor: ['#FF6B35', '#FFD700', '#22C55E', '#3B82F6']
                 }]
             },
@@ -1144,10 +1216,11 @@
         notify('¡Bienvenido a Metele!', 'info');
     }
 
-    // ==========================================
-    // INIT
-    // ==========================================
-    seed().then(function() { updateDashboard(); });
+    seed().then(function() {
+        if (sessionStorage.getItem('metele_auth') === 'true') {
+            updateDashboard();
+        }
+    });
     </script>
 </body>
 </html>
