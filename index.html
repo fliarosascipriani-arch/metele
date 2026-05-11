@@ -135,7 +135,7 @@ tr:hover td{background:rgba(255,107,53,.05)}
 
 <main class="mc sh" id="mainContent">
 <section id="section-dashboard"><div style="padding:24px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:12px"><div><h2 class="fd" style="font-size:28px;color:white;margin-bottom:4px">Dashboard</h2><p style="color:#666">Resumen general</p></div><button class="btn bp" onclick="openModal('modalPedido')" style="font-size:15px;padding:12px 24px">➕ Nuevo Pedido</button></div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:24px"><div class="ca kc o"><p style="font-size:12px;color:#666">Pedidos del Mes</p><p id="kpiPM" style="font-size:28px;font-weight:800;color:white">$0</p></div><div class="ca kc g"><p style="font-size:12px;color:#666">Ganancia</p><p id="kpiGN" style="font-size:28px;font-weight:800;color:#22C55E">$0</p></div><div class="ca kc b"><p style="font-size:12px;color:#666">Clientes</p><p id="kpiCL" style="font-size:28px;font-weight:800;color:white">0</p></div><div class="ca kc y"><p style="font-size:12px;color:#666">Deudas</p><p id="kpiDE" style="font-size:28px;font-weight:800;color:#F59E0B">$0</p></div><div class="ca kc p"><p style="font-size:12px;color:#666">En Proceso</p><p id="kpiEP" style="font-size:28px;font-weight:800;color:#A855F7">0</p></div><div class="ca kc r"><p style="font-size:12px;color:#666">Pizzas</p><p id="kpiPZ" style="font-size:28px;font-weight:800;color:white">0</p></div></div><div style="display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:24px"><div class="ca"><h3 style="color:white;margin-bottom:16px">📊 Ventas por Tipo</h3><div class="cc"><canvas id="cTipo"></canvas></div></div><div class="ca"><h3 style="color:white;margin-bottom:16px">🚚 Por Canal</h3><div class="cc"><canvas id="cCanal"></canvas></div></div></div><div class="ca"><h3 style="color:white;margin-bottom:16px">📋 Últimos Pedidos</h3><div class="tc"><table><thead><tr><th>Fecha</th><th>Cliente</th><th>Productos</th><th>Total</th><th>Estado</th><th>Pago</th></tr></thead><tbody id="dPedidos"></tbody></table></div></div></div></section>
-<section id="section-pedidos" class="sh"><div style="padding:24px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:12px"><h2 class="fd" style="font-size:28px;color:white">📋 Pedidos</h2><button class="btn bp" onclick="openModal('modalPedido')">➕ Nuevo Pedido</button></div><div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap"><div class="si" style="flex:1"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg><input type="text" class="fi" placeholder="Buscar..." id="searchPedido" oninput="renderPedidos()"></div><select class="fs" id="filterPE" onchange="renderPedidos()" style="width:auto"><option value="">Todos</option><option value="Pendiente">Pendiente</option><option value="En proceso">En proceso</option><option value="Entregado">Entregado</option></select><select class="fs" id="filterPP" onchange="renderPedidos()" style="width:auto"><option value="">Todos</option><option value="Pagado">Pagado</option><option value="Pendiente">Pendiente</option></select></div><div class="ca"><div class="tc"><table><thead><tr><th>Fecha</th><th>Cliente</th><th>Productos</th><th>Total</th><th>Estado</th><th>Pago</th><th>Deuda</th><th>Acciones</th></tr></thead><tbody id="tPedidos"></tbody></table></div></div></div></section>
+<section id="section-pedidos" class="sh"><div style="padding:24px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:12px"><h2 class="fd" style="font-size:28px;color:white">📋 Pedidos</h2><button class="btn bp" onclick="openModal('modalPedido')">➕ Nuevo Pedido</button></div><div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap"><div class="si" style="flex:1"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg><input type="text" class="fi" placeholder="Buscar..." id="searchPedido" oninput="renderPedidos()"></div><select class="fs" id="filterPE" onchange="renderPedidos()" style="width:auto"><option value="">Todos</option><option value="Pendiente">Pendiente</option><option value="En proceso">En proceso</option><option value="Entregado">Entregado</option></select><select class="fs" id="filterPP" onchange="renderPedidos()" style="width:auto"><option value="">Todos</option><option value="Pagado">Pagado</option><option value="Pendiente">Pendiente</option><option value="Pago Parcial">Pago Parcial</option></select></div><div class="ca"><div class="tc"><table><thead><tr><th>Fecha</th><th>Cliente</th><th>Productos</th><th>Total</th><th>Estado</th><th>Pago</th><th>Deuda</th><th>Acciones</th></tr></thead><tbody id="tPedidos"></tbody></table></div></div></div></section>
 <section id="section-clientes" class="sh"><div style="padding:24px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px"><h2 class="fd" style="font-size:28px;color:white">👥 Clientes</h2><button class="btn bp" onclick="openModal('modalCliente')">➕ Nuevo Cliente</button></div><div class="si" style="margin-bottom:16px"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg><input type="text" class="fi" placeholder="Buscar..." id="searchCliente" oninput="renderClientes()"></div><div class="ca"><div class="tc"><table><thead><tr><th>Nombre</th><th>Tipo</th><th>Tel&eacute;fono</th><th>Direcci&oacute;n</th><th>Compras</th><th>Deuda</th><th>Acciones</th></tr></thead><tbody id="tClientes"></tbody></table></div></div></div></section>
 <section id="section-deudas" class="sh"><div style="padding:24px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px"><h2 class="fd" style="font-size:28px;color:white">⏳ Deudas y Pagos</h2><button class="btn bp" onclick="openModal('modalPago')">💵 Registrar Pago</button></div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:24px"><div class="ca kc y"><p style="font-size:12px;color:#666">Total Deudas</p><p id="kpiTD" style="font-size:28px;font-weight:800;color:#F59E0B">$0</p></div><div class="ca kc r"><p style="font-size:12px;color:#666">Vencidas</p><p id="kpiDV" style="font-size:28px;font-weight:800;color:#EF4444">$0</p></div><div class="ca kc g"><p style="font-size:12px;color:#666">Cobradas este Mes</p><p id="kpiCM" style="font-size:28px;font-weight:800;color:#22C55E">$0</p></div></div><div class="ca"><h3 style="color:white;margin-bottom:16px">📋 Deudas Pendientes</h3><div class="tc"><table><thead><tr><th>Cliente</th><th>Pedido</th><th>Total</th><th>Pagado</th><th>Restante</th><th>Fecha</th><th>Estado</th><th>Acciones</th></tr></thead><tbody id="tDeudas"></tbody></table></div></div><div class="ca" style="margin-top:16px"><h3 style="color:white;margin-bottom:16px">📋 Pagos</h3><div class="tc"><table><thead><tr><th>Fecha</th><th>Cliente</th><th>Monto</th><th>M&eacute;todo</th><th>Acciones</th></tr></thead><tbody id="tPagos"></tbody></table></div></div></div></section>
 <section id="section-insumos" class="sh"><div style="padding:24px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px"><h2 class="fd" style="font-size:28px;color:white">📦 Insumos</h2><button class="btn bp" onclick="openModal('modalInsumo')">➕ Nuevo Insumo</button></div><div class="ca" style="margin-bottom:24px"><h3 style="color:white;margin-bottom:16px">💰 Costo por Pizza</h3><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:16px" id="costoPizza"></div></div><div class="ca"><div class="tc"><table><thead><tr><th>Nombre</th><th>Marca</th><th>Unidad</th><th>Precio</th><th>Stock</th><th>Uso/Pizza</th><th>Costo</th><th>Acciones</th></tr></thead><tbody id="tInsumos"></tbody></table></div></div></div></section>
@@ -210,18 +210,21 @@ for(var k in row){
 if(k==='created_at')continue;
 if(k==='cliente_id'){o.clienteId=row[k];continue}
 if(k==='venta_id'){o.ventaId=row[k];continue}
-if(k==='precio_unitario'){o.precioUnitario=parseFloat(row[k]);continue}
+if(k==='precio_unitario'){o.precioUnitario=parseFloat(row[k])||0;continue}
 if(k==='fecha_pago_estimado'){o.fechaPagoEstimado=row[k];continue}
-if(k==='uso_por_pizza'){o.usoPorPizza=parseFloat(row[k]);continue}
+if(k==='uso_por_pizza'){o.usoPorPizza=parseFloat(row[k])||0;continue}
 if(k==='insumo_tipo'){o.insumoTipo=row[k];continue}
 if(k==='estado_pago'){o.estadoPago=row[k];continue}
+if(k==='cantidad'){o.cantidadOld=parseInt(row[k])||0;continue}
+if(k==='tipo'){o.tipoOld=row[k];continue}
 if(k==='items'){if(typeof row[k]==='string'){try{o.items=JSON.parse(row[k])}catch(e){o.items=[]}}else if(Array.isArray(row[k])){o.items=row[k]}else{o.items=[]}continue}
 o[k]=row[k];
 }
 var nums=['precioUnitario','total','monto','precio','stock','usoPorPizza','calidad'];
 for(var i=0;i<nums.length;i++){if(o[nums[i]]!==undefined&&o[nums[i]]!==null)o[nums[i]]=parseFloat(o[nums[i]])}
 if(!o.items)o.items=[];
-if(o.tipo&&!o.items.length){o.items=[{tipo:o.tipo,cantidad:o.cantidad||1,precioUnitario:o.precioUnitario||0,subtotal:(o.cantidad||1)*(o.precioUnitario||0)}]}
+if(o.items.length===0&&o.tipoOld){o.items=[{tipo:o.tipoOld,cantidad:o.cantidadOld||1,precioUnitario:o.precioUnitario||0,subtotal:(o.cantidadOld||1)*(o.precioUnitario||0)}]}
+if(o.items.length===0&&o.total>0){o.items=[{tipo:'Muzzarella',cantidad:1,precioUnitario:o.total,subtotal:o.total}]}
 return o;
 }
 
@@ -234,11 +237,11 @@ async function deleteVentaWithPagos(vid){var pagos=await dbGet('pagos');for(var 
 
 function getStatusBadge(estado){var map={'Pendiente':'ba-pn','En proceso':'ba-pr','Entregado':'ba-e'};return map[estado]||'ba-pn'}
 function getItemsSummary(items){if(!items||items.length===0)return'';var h='';for(var i=0;i<items.length;i++){h+='<span class="bi">'+items[i].tipo+' x'+items[i].cantidad+'</span>'}return h}
-function getDeudaRestante(vid,pedidos,pagos){var p=null;for(var i=0;i<pedidos.length;i++){if(pedidos[i].id===vid){p=pedidos[i];break}}if(!p)return 0;if(p.estado_pago==='Pagado')return 0;var pag=0;for(var i=0;i<pagos.length;i++){if(pagos[i].ventaId===vid)pag+=pagos[i].monto}return Math.max(0,p.total-pag)}
+function getDeudaRestante(vid,pedidos,pagos){var p=null;for(var i=0;i<pedidos.length;i++){if(pedidos[i].id===vid){p=pedidos[i];break}}if(!p)return 0;if(p.estadoPago==='Pagado')return 0;var pag=0;for(var i=0;i<pagos.length;i++){if(pagos[i].ventaId===vid)pag+=pagos[i].monto}return Math.max(0,p.total-pag)}
 function calcDeudaCliente(cid,pedidos,pagos){var tv=0;for(var i=0;i<pedidos.length;i++){if(pedidos[i].clienteId===cid)tv+=pedidos[i].total}var tp=0;for(var i=0;i<pagos.length;i++){var pe=null;for(var j=0;j<pedidos.length;j++){if(pedidos[j].id===pagos[i].ventaId){pe=pedidos[j];break}}if(pe&&pe.clienteId===cid)tp+=pagos[i].monto}return Math.max(0,tv-tp)}
 
 async function populateClientes(){var c=await dbGet('clientes');var s=document.getElementById('pCliente');var h='<option value="">Seleccionar...</option>';for(var i=0;i<c.length;i++){h+='<option value="'+c[i].id+'">'+c[i].nombre+' ('+c[i].tipo+')</option>'}s.innerHTML=h}
-async function populatePedidosParaPago(){var pe=await dbGet(TBL);var pa=await dbGet('pagos');var s=document.getElementById('pagPedido');var h='<option value="">Seleccionar...</option>';for(var i=0;i<pe.length;i++){if(pe[i].estado_pago!=='Pagado'){var pag=0;for(var j=0;j<pa.length;j++){if(pa[j].ventaId===pe[i].id)pag+=pa[j].monto}var rest=pe[i].total-pag;var desc='';for(var j=0;j<pe[i].items.length;j++){desc+=pe[i].items[j].tipo+' x'+pe[i].items[j].cantidad+' '}h+='<option value="'+pe[i].id+'">'+desc.trim()+' - Rest: $'+rest.toLocaleString()+'</option>'}}s.innerHTML=h}
+async function populatePedidosParaPago(){var pe=await dbGet(TBL);var pa=await dbGet('pagos');var s=document.getElementById('pagPedido');var h='<option value="">Seleccionar...</option>';for(var i=0;i<pe.length;i++){if(pe[i].estadoPago!=='Pagado'){var pag=0;for(var j=0;j<pa.length;j++){if(pa[j].ventaId===pe[i].id)pag+=pa[j].monto}var rest=pe[i].total-pag;var desc='';for(var j=0;j<pe[i].items.length;j++){desc+=pe[i].items[j].tipo+' x'+pe[i].items[j].cantidad+' '}h+='<option value="'+pe[i].id+'">'+desc.trim()+' - Rest: $'+rest.toLocaleString()+'</option>'}}s.innerHTML=h}
 
 function resetPItems(){document.getElementById('pItems').innerHTML='';itemCounter=0;addPItem()}
 window.addPItem=function(){itemCounter++;var id=itemCounter;var c=document.getElementById('pItems');var row=document.createElement('div');row.className='ir';row.id='ir-'+id;row.innerHTML='<div><label>Tipo</label><select class="fs" id="itT_'+id+'" onchange="calcIS('+id+')"><option value="">...</option><option value="Muzzarella">Muzzarella</option><option value="Especial">Especial</option></select></div><div><label>Cant</label><input type="number" class="fi" id="itC_'+id+'" min="1" value="1" oninput="calcIS('+id+')"></div><div><label>Precio</label><input type="number" class="fi" id="itP_'+id+'" oninput="calcIS('+id+')"></div><div><label>Subtotal</label><div class="iss" id="itS_'+id+'">$0</div></div><div><button class="ri" onclick="removePItem('+id+')">✕</button></div>';c.appendChild(row);calcPTotal()};
@@ -250,21 +253,31 @@ window.toggleFP=function(){var e=document.getElementById('pPago').value;var c=do
 window.openNewClientFromOrder=function(){clearClienteForm();document.getElementById('tCliente').textContent='Nuevo Cliente (Rápido)';window.openModal('modalCliente')};
 
 window.renderPedidos=async function(){
-var pedidos=await dbGet(TBL);var clientes=await dbGet('clientes');var pagos=await dbGet('pagos');
+var pedidos=await dbGet(TBL);
+var clientes=await dbGet('clientes');
+var pagos=await dbGet('pagos');
 var s=(document.getElementById('searchPedido')||{}).value||'';s=s.toLowerCase();
 var fE=document.getElementById('filterPE').value;var fP=document.getElementById('filterPP').value;
 var filtered=[];
-for(var i=0;i<pedidos.length;i++){var p=pedidos[i];var cl=null;for(var j=0;j<clientes.length;j++){if(clientes[j].id===p.clienteId){cl=clientes[j];break}}var n=cl?cl.nombre.toLowerCase():'';var match=(!s||n.indexOf(s)!==-1);for(var k=0;k<p.items.length;k++){if(p.items[k].tipo.toLowerCase().indexOf(s)!==-1)match=true}if(match&&(!fE||p.estado===fE)&&(!fP||p.estado_pago===fP))filtered.push(p)}
+for(var i=0;i<pedidos.length;i++){
+var p=pedidos[i];
+var cl=null;for(var j=0;j<clientes.length;j++){if(clientes[j].id===p.clienteId){cl=clientes[j];break}}
+var n=cl?cl.nombre.toLowerCase():'';
+var match=(!s||n.indexOf(s)!==-1);
+for(var k=0;k<p.items.length;k++){if(p.items[k].tipo.toLowerCase().indexOf(s)!==-1)match=true}
+if(match&&(!fE||p.estado===fE)&&(!fP||p.estadoPago===fP))filtered.push(p);
+}
 filtered.sort(function(a,b){return b.fecha>a.fecha?1:-1});
-var tb=document.getElementById('tPedidos');if(filtered.length===0){tb.innerHTML='<tr><td colspan="8" class="es">Sin pedidos</td></tr>';return}
+var tb=document.getElementById('tPedidos');
+if(filtered.length===0){tb.innerHTML='<tr><td colspan="8" class="es">Sin pedidos (Total en DB: '+pedidos.length+')</td></tr>';return}
 var h='';
 for(var i=0;i<filtered.length;i++){
 var p=filtered[i];var cl=null;for(var j=0;j<clientes.length;j++){if(clientes[j].id===p.clienteId){cl=clientes[j];break}}
 var hoy=new Date().toISOString().split('T')[0];
-var vto=p.fechaPagoEstimado&&p.fechaPagoEstimado<hoy&&p.estado_pago!=='Pagado';
-var ep=p.estado_pago;
+var vto=p.fechaPagoEstimado&&p.fechaPagoEstimado<hoy&&p.estadoPago!=='Pagado';
+var ep=p.estadoPago;
 var pb=ep==='Pagado'?'ba-p':(ep==='Pago Parcial'?'ba-pp':(vto?'ba-v':'ba-pn'));
-var pt=ep==='Pagado'?'Pagado':(ep==='Pago Parcial'?'Pago Parcial':(vto?'Vencido':'Pendiente'));
+var pt=ep==='Pagado'?'Pagado':(ep==='Pago Parcial'?'Parcial':(vto?'Vencido':'Pendiente'));
 var deuda=getDeudaRestante(p.id,pedidos,pagos);
 h+='<tr><td>'+fmt(p.fecha)+'</td><td>'+(cl?cl.nombre:'N/A')+'</td><td>'+getItemsSummary(p.items)+'</td><td>$'+p.total.toLocaleString()+'</td><td><span class="ba '+getStatusBadge(p.estado)+'">'+p.estado+'</span></td><td><span class="ba '+pb+'">'+pt+'</span></td><td style="color:'+(deuda>0?'#EF4444':'#22C55E')+'">$'+deuda.toLocaleString()+'</td><td><button class="btn bsm bs" onclick="editPedido(\''+p.id+'\')">✏️</button> <button class="btn bsm bd" onclick="deletePedido(\''+p.id+'\')">🗑️</button></td></tr>';
 }
@@ -291,7 +304,7 @@ inp.value=p.id;
 document.getElementById('pCliente').value=p.clienteId;
 document.getElementById('pCanal').value=p.canal;
 document.getElementById('pEstado').value=p.estado;
-document.getElementById('pPago').value=p.estado_pago;
+document.getElementById('pPago').value=p.estadoPago;
 document.getElementById('pFPago').value=p.fechaPagoEstimado||'';
 document.getElementById('pFecha').value=p.fecha;
 document.getElementById('pNotas').value=p.notas||'';
@@ -342,12 +355,12 @@ window.deletePago=async function(id){if(!confirm('¿Eliminar?'))return;if(await 
 
 window.renderDeudas=async function(){
 var pedidos=await dbGet(TBL);var clientes=await dbGet('clientes');var pagos=await dbGet('pagos');
-var hoy=new Date().toISOString().split('T')[0];var pend=[];for(var i=0;i<pedidos.length;i++){if(pedidos[i].estado_pago!=='Pagado')pend.push(pedidos[i])}
+var hoy=new Date().toISOString().split('T')[0];var pend=[];for(var i=0;i<pedidos.length;i++){if(pedidos[i].estadoPago!=='Pagado')pend.push(pedidos[i])}
 var totD=0,venc=0;for(var i=0;i<pend.length;i++){var pag=0;for(var j=0;j<pagos.length;j++){if(pagos[j].ventaId===pend[i].id)pag+=pagos[j].monto}var rest=pend[i].total-pag;totD+=rest;if(pend[i].fechaPagoEstimado&&pend[i].fechaPagoEstimado<hoy)venc+=rest}
 var mes=hoy.substring(0,7);var cob=0;for(var i=0;i<pagos.length;i++){if(pagos[i].fecha&&pagos[i].fecha.substring(0,7)===mes)cob+=pagos[i].monto}
 document.getElementById('kpiTD').textContent='$'+totD.toLocaleString();document.getElementById('kpiDV').textContent='$'+venc.toLocaleString();document.getElementById('kpiCM').textContent='$'+cob.toLocaleString();
 var tb=document.getElementById('tDeudas');if(pend.length===0){tb.innerHTML='<tr><td colspan="8" class="es">🎉 ¡Sin deudas!</td></tr>';return}
-var h='';for(var i=0;i<pend.length;i++){var p=pend[i];var cl=null;for(var j=0;j<clientes.length;j++){if(clientes[j].id===p.clienteId){cl=clientes[j];break}}var pag=0;for(var j=0;j<pagos.length;j++){if(pagos[j].ventaId===p.id)pag+=pagos[j].monto}var rest=p.total-pag;var vto=p.fechaPagoEstimado&&p.fechaPagoEstimado<hoy;var desc='';for(var j=0;j<p.items.length;j++){desc+=p.items[j].tipo+' x'+p.items[j].cantidad+' '}var pb=p.estado_pago==='Pago Parcial'?'ba-pp':'ba-pn';h+='<tr><td>'+(cl?cl.nombre:'N/A')+'</td><td>'+desc.trim()+'</td><td>$'+p.total.toLocaleString()+'</td><td>$'+pag.toLocaleString()+'</td><td style="color:#EF4444;font-weight:700">$'+rest.toLocaleString()+'</td><td>'+(p.fechaPagoEstimado?fmt(p.fechaPagoEstimado):'-')+'</td><td><span class="ba '+pb+'">'+(p.estado_pago==='Pago Parcial'?'Parcial':'Pendiente')+'</span></td><td><button class="btn bsm bg" onclick="quickPay(\''+p.id+'\','+rest+')">💵</button></td></tr>'}
+var h='';for(var i=0;i<pend.length;i++){var p=pend[i];var cl=null;for(var j=0;j<clientes.length;j++){if(clientes[j].id===p.clienteId){cl=clientes[j];break}}var pag=0;for(var j=0;j<pagos.length;j++){if(pagos[j].ventaId===p.id)pag+=pagos[j].monto}var rest=p.total-pag;var vto=p.fechaPagoEstimado&&p.fechaPagoEstimado<hoy;var desc='';for(var j=0;j<p.items.length;j++){desc+=p.items[j].tipo+' x'+p.items[j].cantidad+' '}var pb=p.estadoPago==='Pago Parcial'?'ba-pp':'ba-pn';h+='<tr><td>'+(cl?cl.nombre:'N/A')+'</td><td>'+desc.trim()+'</td><td>$'+p.total.toLocaleString()+'</td><td>$'+pag.toLocaleString()+'</td><td style="color:#EF4444;font-weight:700">$'+rest.toLocaleString()+'</td><td>'+(p.fechaPagoEstimado?fmt(p.fechaPagoEstimado):'-')+'</td><td><span class="ba '+pb+'">'+(p.estadoPago==='Pago Parcial'?'Parcial':'Pendiente')+'</span></td><td><button class="btn bsm bg" onclick="quickPay(\''+p.id+'\','+rest+')">💵</button></td></tr>'}
 tb.innerHTML=h;
 var tp=document.getElementById('tPagos');var ps=pagos.slice().sort(function(a,b){return b.fecha>a.fecha?1:-1});if(ps.length===0){tp.innerHTML='<tr><td colspan="5" class="es">Sin pagos</td></tr>';return}
 var h2='';for(var i=0;i<ps.length;i++){var pa=ps[i];var vt=null;for(var j=0;j<pedidos.length;j++){if(pedidos[j].id===pa.ventaId){vt=pedidos[j];break}}var cl=null;if(vt){for(var j=0;j<clientes.length;j++){if(clientes[j].id===vt.clienteId){cl=clientes[j];break}}}h2+='<tr><td>'+fmt(pa.fecha)+'</td><td>'+(cl?cl.nombre:'N/A')+'</td><td style="color:#22C55E;font-weight:700">$'+pa.monto.toLocaleString()+'</td><td>'+pa.metodo+'</td><td><button class="btn bsm bd" onclick="deletePago(\''+pa.id+'\')">🗑️</button></td></tr>'}
@@ -372,7 +385,7 @@ async function updateDashboard(){
 var pedidos=await dbGet(TBL);var clientes=await dbGet('clientes');var pagos=await dbGet('pagos');var insumos=await dbGet('insumos');
 var mes=new Date().toISOString().substring(0,7);var pm=pedidos.filter(function(p){return p.fecha&&p.fecha.substring(0,7)===mes});var tv=pm.reduce(function(s,p){return s+p.total},0);
 var ct=0;var totalPizzas=0;for(var i=0;i<pedidos.length;i++){for(var j=0;j<pedidos[i].items.length;j++){totalPizzas+=pedidos[i].items[j].cantidad}}for(var i=0;i<insumos.length;i++){var u=pedidos.reduce(function(s,p){return s+getTotalItems(p.items)*(insumos[i].usoPorPizza||0)},0);ct+=u*insumos[i].precio}
-var gan=tv-ct;var td=0;var pend=pedidos.filter(function(p){return p.estado_pago!=='Pagado'});for(var i=0;i<pend.length;i++){var pa=pagos.filter(function(pg){return pg.ventaId===pend[i].id}).reduce(function(s,pg){return s+pg.monto},0);td+=pend[i].total-pa}
+var gan=tv-ct;var td=0;var pend=pedidos.filter(function(p){return p.estadoPago!=='Pagado'});for(var i=0;i<pend.length;i++){var pa=pagos.filter(function(pg){return pg.ventaId===pend[i].id}).reduce(function(s,pg){return s+pg.monto},0);td+=pend[i].total-pa}
 var enP=0;for(var i=0;i<pedidos.length;i++){if(pedidos[i].estado==='En proceso')enP++}
 document.getElementById('kpiPM').textContent='$'+tv.toLocaleString();document.getElementById('kpiGN').textContent='$'+gan.toLocaleString();document.getElementById('kpiCL').textContent=clientes.length;document.getElementById('kpiDE').textContent='$'+Math.max(0,td).toLocaleString();document.getElementById('kpiEP').textContent=enP;document.getElementById('kpiPZ').textContent=totalPizzas;
 
@@ -382,9 +395,9 @@ ch1=new Chart(document.getElementById('cTipo'),{type:'bar',data:{labels:Object.k
 var canales={};pedidos.forEach(function(p){canales[p.canal]=(canales[p.canal]||0)+p.total});
 ch2=new Chart(document.getElementById('cCanal'),{type:'doughnut',data:{labels:Object.keys(canales),datasets:[{data:Object.values(canales),backgroundColor:['#3B82F6','#A855F7']}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:'#a0a0c0'}}}}});
 
-var dv=document.getElementById('dPedidos');var sorted=pedidos.slice().sort(function(a,b){return b.fecha>a.fecha?1:-1}).slice(0,5);
+var dv=document.getElementById('dPedidos');var sorted=pedidos.slice().sort(function(a,b){return b.fecha>a.fecha?1:-1}).slice(0,10);
 if(sorted.length===0){dv.innerHTML='<tr><td colspan="6" class="es">Sin pedidos</td></tr>';return}
-var h='';for(var i=0;i<sorted.length;i++){var p=sorted[i];var cl=null;for(var j=0;j<clientes.length;j++){if(clientes[j].id===p.clienteId){cl=clientes[j];break}}var ep=p.estado_pago;var pb=ep==='Pagado'?'ba-p':(ep==='Pago Parcial'?'ba-pp':'ba-pn');h+='<tr><td>'+fmt(p.fecha)+'</td><td>'+(cl?cl.nombre:'N/A')+'</td><td>'+getItemsSummary(p.items)+'</td><td>$'+p.total.toLocaleString()+'</td><td><span class="ba '+getStatusBadge(p.estado)+'">'+p.estado+'</span></td><td><span class="ba '+pb+'">'+ep+'</span></td></tr>'}
+var h='';for(var i=0;i<sorted.length;i++){var p=sorted[i];var cl=null;for(var j=0;j<clientes.length;j++){if(clientes[j].id===p.clienteId){cl=clientes[j];break}}var ep=p.estadoPago;var pb=ep==='Pagado'?'ba-p':(ep==='Pago Parcial'?'ba-pp':'ba-pn');h+='<tr><td>'+fmt(p.fecha)+'</td><td>'+(cl?cl.nombre:'N/A')+'</td><td>'+getItemsSummary(p.items)+'</td><td>$'+p.total.toLocaleString()+'</td><td><span class="ba '+getStatusBadge(p.estado)+'">'+p.estado+'</span></td><td><span class="ba '+pb+'">'+ep+'</span></td></tr>'}
 dv.innerHTML=h;
 }
 
