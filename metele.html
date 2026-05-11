@@ -1,0 +1,1312 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Metele - Sistema de Gestión</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Poppins:wght@600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: #0f0f0f; color: #e0e0e0; }
+        .font-display { font-family: 'Poppins', sans-serif; }
+        :root { --primary: #FF6B35; --bg-card: #1a1a2e; --bg-sidebar: #16162b; --border: #2a2a4a; --text-secondary: #a0a0c0; }
+        .sidebar { position: fixed; left: 0; top: 0; bottom: 0; width: 260px; background: var(--bg-sidebar); border-right: 1px solid var(--border); z-index: 50; overflow-y: auto; }
+        .main-content { margin-left: 260px; min-height: 100vh; }
+        .nav-item { display: flex; align-items: center; gap: 12px; padding: 12px 20px; cursor: pointer; transition: all 0.2s; border-left: 3px solid transparent; color: var(--text-secondary); font-size: 14px; font-weight: 500; }
+        .nav-item:hover { background: rgba(255,107,53,0.1); color: var(--primary); }
+        .nav-item.active { background: rgba(255,107,53,0.15); color: var(--primary); border-left-color: var(--primary); }
+        .nav-item svg { width: 20px; height: 20px; flex-shrink: 0; }
+        .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; padding: 24px; transition: all 0.3s; margin-bottom: 16px; }
+        .kpi-card { position: relative; overflow: hidden; }
+        .kpi-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; }
+        .kpi-card.orange::before { background: linear-gradient(90deg, #FF6B35, #FF8F5E); }
+        .kpi-card.green::before { background: linear-gradient(90deg, #22C55E, #4ADE80); }
+        .kpi-card.blue::before { background: linear-gradient(90deg, #3B82F6, #60A5FA); }
+        .kpi-card.yellow::before { background: linear-gradient(90deg, #F59E0B, #FBBF24); }
+        .kpi-card.red::before { background: linear-gradient(90deg, #EF4444, #F87171); }
+        .btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; border-radius: 10px; font-weight: 600; font-size: 14px; cursor: pointer; transition: all 0.2s; border: none; }
+        .btn-primary { background: linear-gradient(135deg, #FF6B35, #FF8F5E); color: white; }
+        .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 15px rgba(255,107,53,0.4); }
+        .btn-secondary { background: var(--bg-card); color: white; border: 1px solid var(--border); }
+        .btn-secondary:hover { border-color: var(--primary); }
+        .btn-success { background: linear-gradient(135deg, #22C55E, #4ADE80); color: white; }
+        .btn-danger { background: linear-gradient(135deg, #EF4444, #F87171); color: white; }
+        .btn-sm { padding: 6px 12px; font-size: 12px; border-radius: 8px; }
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); z-index: 100; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
+        .modal-overlay.active { opacity: 1; pointer-events: all; }
+        .modal { background: var(--bg-card); border: 1px solid var(--border); border-radius: 20px; width: 90%; max-width: 600px; max-height: 90vh; overflow-y: auto; }
+        .modal-header { padding: 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+        .modal-body { padding: 24px; }
+        .modal-footer { padding: 16px 24px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 12px; }
+        .form-group { margin-bottom: 16px; }
+        .form-label { display: block; font-size: 13px; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .form-input, .form-select, .form-textarea { width: 100%; padding: 10px 14px; background: #0f0f0f; border: 1px solid var(--border); border-radius: 10px; color: white; font-size: 14px; transition: border-color 0.2s; }
+        .form-input:focus, .form-select:focus, .form-textarea:focus { outline: none; border-color: var(--primary); }
+        .table-container { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; }
+        th { padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; border-bottom: 1px solid var(--border); }
+        td { padding: 12px 16px; font-size: 14px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        tr:hover td { background: rgba(255,107,53,0.05); }
+        .badge { display: inline-flex; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+        .badge-paid { background: rgba(34,197,94,0.15); color: #22C55E; }
+        .badge-pending { background: rgba(245,158,11,0.15); color: #F59E0B; }
+        .badge-overdue { background: rgba(239,68,68,0.15); color: #EF4444; }
+        .badge-almacen { background: rgba(59,130,246,0.15); color: #3B82F6; }
+        .badge-cliente { background: rgba(168,85,247,0.15); color: #A855F7; }
+        .badge-quality-5 { background: rgba(34,197,94,0.2); color: #22C55E; }
+        .badge-quality-4 { background: rgba(132,204,22,0.2); color: #84CC16; }
+        .badge-quality-3 { background: rgba(245,158,11,0.2); color: #F59E0B; }
+        .badge-quality-2 { background: rgba(239,68,68,0.15); color: #EF4444; }
+        .star-rating { display: flex; gap: 2px; cursor: pointer; }
+        .star { font-size: 20px; color: #444; transition: color 0.2s; }
+        .star.active { color: #FFD700; }
+        .tab-btn { padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; color: var(--text-secondary); background: transparent; border: none; }
+        .tab-btn.active { background: var(--primary); color: white; }
+        .search-input { position: relative; }
+        .search-input svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 18px; height: 18px; color: var(--text-secondary); }
+        .search-input input { padding-left: 38px; }
+        .section-hidden { display: none !important; }
+        .notification { position: fixed; top: 20px; right: 20px; z-index: 200; padding: 16px 24px; border-radius: 12px; font-weight: 600; transform: translateX(120%); transition: transform 0.3s; display: flex; align-items: center; gap: 10px; }
+        .notification.show { transform: translateX(0); }
+        .notification.success { background: #22C55E; color: white; }
+        .notification.error { background: #EF4444; color: white; }
+        .notification.info { background: #3B82F6; color: white; }
+        .chart-container { position: relative; height: 300px; }
+        .tip-card { background: linear-gradient(135deg, rgba(255,107,53,0.1), rgba(255,215,0,0.05)); border: 1px solid rgba(255,107,53,0.2); border-radius: 12px; padding: 20px; margin-bottom: 16px; }
+        .tip-card h4 { color: var(--primary); margin-bottom: 8px; }
+        .tip-card ul { color: var(--text-secondary); padding-left: 20px; line-height: 1.8; }
+        .whatsapp-tip { background: linear-gradient(135deg, #25D366, #128C7E); color: white; border-radius: 12px; padding: 16px; margin: 12px 0; }
+        .empty-state { text-align: center; padding: 40px; color: var(--text-secondary); }
+        .hamburger { display: none; position: fixed; top: 16px; left: 16px; z-index: 60; background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 8px; cursor: pointer; }
+        @media (max-width: 768px) {
+            .sidebar { transform: translateX(-260px); transition: transform 0.3s; }
+            .sidebar.open { transform: translateX(0); }
+            .main-content { margin-left: 0 !important; }
+            .hamburger { display: block; }
+        }
+    </style>
+</head>
+<body>
+    <div id="notification" class="notification"></div>
+    <button class="hamburger" onclick="toggleSidebar()">☰</button>
+
+    <aside class="sidebar" id="sidebar">
+        <div style="padding: 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px;">
+            <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #FF6B35, #FF8F5E); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px;">🍕</div>
+            <div><h1 class="font-display" style="font-size: 20px; color: #FF6B35;">Metele</h1><p style="font-size: 10px; color: #666;">Sistema de Gestión</p></div>
+        </div>
+        <nav style="padding: 12px 0;">
+            <div class="nav-item active" data-section="dashboard" onclick="showSection('dashboard')">
+                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0a1 1 0 01-1-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 01-1 1"/></svg> Dashboard
+            </div>
+            <div class="nav-item" data-section="ventas" onclick="showSection('ventas')">
+                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg> Ventas
+            </div>
+            <div class="nav-item" data-section="clientes" onclick="showSection('clientes')">
+                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg> Clientes
+            </div>
+            <div class="nav-item" data-section="deudas" onclick="showSection('deudas')">
+                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg> Deudas y Pagos
+            </div>
+            <div class="nav-item" data-section="insumos" onclick="showSection('insumos')">
+                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg> Insumos y Costos
+            </div>
+            <div class="nav-item" data-section="marcas" onclick="showSection('marcas')">
+                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg> Registro de Marcas
+            </div>
+            <div class="nav-item" data-section="reportes" onclick="showSection('reportes')">
+                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg> Reportes
+            </div>
+            <div class="nav-item" data-section="guia" onclick="showSection('guia')">
+                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg> Guía
+            </div>
+        </nav>
+        <div style="padding: 16px 20px; border-top: 1px solid var(--border);">
+            <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+                <button class="btn btn-secondary btn-sm" style="flex:1" onclick="exportData()">📥 Exportar</button>
+                <button class="btn btn-secondary btn-sm" style="flex:1" onclick="document.getElementById('importFile').click()">📤 Importar</button>
+            </div>
+            <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)">
+            <p style="font-size:10px;color:#666;margin-top:8px;" id="dbStatus">🟢 Conectado a Supabase</p>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <section id="section-dashboard">
+            <div style="padding: 24px;">
+                <h2 class="font-display" style="font-size: 28px; color: white; margin-bottom: 4px;">Dashboard</h2>
+                <p style="color: #666; margin-bottom: 24px;">Resumen general</p>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;">
+                    <div class="card kpi-card orange"><p style="font-size: 12px; color: #666;">Ventas del Mes</p><p id="kpiVentasMes" style="font-size: 32px; font-weight: 800; color: white;">$0</p></div>
+                    <div class="card kpi-card green"><p style="font-size: 12px; color: #666;">Ganancia Neta</p><p id="kpiGanancia" style="font-size: 32px; font-weight: 800; color: #22C55E;">$0</p></div>
+                    <div class="card kpi-card blue"><p style="font-size: 12px; color: #666;">Clientes</p><p id="kpiClientes" style="font-size: 32px; font-weight: 800; color: white;">0</p></div>
+                    <div class="card kpi-card yellow"><p style="font-size: 12px; color: #666;">Deudas</p><p id="kpiDeudas" style="font-size: 32px; font-weight: 800; color: #F59E0B;">$0</p></div>
+                    <div class="card kpi-card red"><p style="font-size: 12px; color: #666;">Pizzas Vendidas</p><p id="kpiPizzas" style="font-size: 32px; font-weight: 800; color: white;">0</p></div>
+                </div>
+                <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-bottom: 24px;">
+                    <div class="card"><h3 style="color: white; margin-bottom: 16px;">📊 Ventas por Tipo</h3><div class="chart-container"><canvas id="chartVentasTipo"></canvas></div></div>
+                    <div class="card"><h3 style="color: white; margin-bottom: 16px;">🚚 Ventas por Canal</h3><div class="chart-container"><canvas id="chartVentasCanal"></canvas></div></div>
+                </div>
+                <div class="card"><h3 style="color: white; margin-bottom: 16px;">📋 Últimas Ventas</h3><div class="table-container"><table><thead><tr><th>Fecha</th><th>Cliente</th><th>Tipo</th><th>Cant.</th><th>Total</th><th>Estado</th></tr></thead><tbody id="dashboardVentas"></tbody></table></div></div>
+            </div>
+        </section>
+
+        <section id="section-ventas" class="section-hidden">
+            <div style="padding: 24px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
+                    <h2 class="font-display" style="font-size: 28px; color: white;">🍕 Ventas</h2>
+                    <button class="btn btn-primary" onclick="openModal('modalVenta')">➕ Nueva Venta</button>
+                </div>
+                <div style="display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap;">
+                    <div class="search-input" style="flex:1"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg><input type="text" class="form-input" placeholder="Buscar..." id="searchVenta" oninput="renderVentas()"></div>
+                    <select class="form-select" id="filterVentaTipo" onchange="renderVentas()" style="width:auto"><option value="">Todos</option><option value="Muzzarella">Muzzarella</option><option value="Especial">Especial</option></select>
+                </div>
+                <div class="card"><div class="table-container"><table><thead><tr><th>Fecha</th><th>Cliente</th><th>Tipo</th><th>Cant.</th><th>Precio</th><th>Total</th><th>Estado</th><th>Acciones</th></tr></thead><tbody id="tablaVentas"></tbody></table></div></div>
+            </div>
+        </section>
+
+        <section id="section-clientes" class="section-hidden">
+            <div style="padding: 24px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                    <h2 class="font-display" style="font-size: 28px; color: white;">👥 Clientes</h2>
+                    <button class="btn btn-primary" onclick="openModal('modalCliente')">➕ Nuevo Cliente</button>
+                </div>
+                <div class="search-input" style="margin-bottom: 16px;"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg><input type="text" class="form-input" placeholder="Buscar cliente..." id="searchCliente" oninput="renderClientes()"></div>
+                <div class="card"><div class="table-container"><table><thead><tr><th>Nombre</th><th>Tipo</th><th>Teléfono</th><th>Dirección</th><th>Compras</th><th>Deuda</th><th>Acciones</th></tr></thead><tbody id="tablaClientes"></tbody></table></div></div>
+            </div>
+        </section>
+
+        <section id="section-deudas" class="section-hidden">
+            <div style="padding: 24px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                    <h2 class="font-display" style="font-size: 28px; color: white;">⏳ Deudas y Pagos</h2>
+                    <button class="btn btn-primary" onclick="openModal('modalPago')">💵 Registrar Pago</button>
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;">
+                    <div class="card kpi-card yellow"><p style="font-size: 12px; color: #666;">Total Deudas</p><p id="kpiTotalDeudas" style="font-size: 28px; font-weight: 800; color: #F59E0B;">$0</p></div>
+                    <div class="card kpi-card red"><p style="font-size: 12px; color: #666;">Vencidas</p><p id="kpiDeudasVencidas" style="font-size: 28px; font-weight: 800; color: #EF4444;">$0</p></div>
+                    <div class="card kpi-card green"><p style="font-size: 12px; color: #666;">Cobradas este Mes</p><p id="kpiCobradasMes" style="font-size: 28px; font-weight: 800; color: #22C55E;">$0</p></div>
+                </div>
+                <div class="card"><h3 style="color: white; margin-bottom: 16px;">📋 Deudas Pendientes</h3><div class="table-container"><table><thead><tr><th>Cliente</th><th>Venta</th><th>Total</th><th>Pagado</th><th>Restante</th><th>Fecha Pago</th><th>Estado</th><th>Acciones</th></tr></thead><tbody id="tablaDeudas"></tbody></table></div></div>
+                <div class="card" style="margin-top: 16px;"><h3 style="color: white; margin-bottom: 16px;">📋 Historial de Pagos</h3><div class="table-container"><table><thead><tr><th>Fecha</th><th>Cliente</th><th>Monto</th><th>Método</th><th>Acciones</th></tr></thead><tbody id="tablaPagos"></tbody></table></div></div>
+            </div>
+        </section>
+
+        <section id="section-insumos" class="section-hidden">
+            <div style="padding: 24px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                    <h2 class="font-display" style="font-size: 28px; color: white;">📦 Insumos y Costos</h2>
+                    <button class="btn btn-primary" onclick="openModal('modalInsumo')">➕ Nuevo Insumo</button>
+                </div>
+                <div class="card" style="margin-bottom: 24px;"><h3 style="color: white; margin-bottom: 16px;">💰 Costo por Pizza</h3><div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px;" id="costoPorPizza"></div></div>
+                <div class="card"><div class="table-container"><table><thead><tr><th>Nombre</th><th>Marca</th><th>Unidad</th><th>Precio</th><th>Stock</th><th>Uso/Pizza</th><th>Costo/Pizza</th><th>Acciones</th></tr></thead><tbody id="tablaInsumos"></tbody></table></div></div>
+            </div>
+        </section>
+
+        <section id="section-marcas" class="section-hidden">
+            <div style="padding: 24px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                    <h2 class="font-display" style="font-size: 28px; color: white;">🏷️ Registro de Marcas</h2>
+                    <button class="btn btn-primary" onclick="openModal('modalMarca')">➕ Nueva Marca</button>
+                </div>
+                <div class="card"><div class="table-container"><table><thead><tr><th>Marca</th><th>Insumo</th><th>Calidad</th><th>Precio</th><th>Proveedor</th><th>Notas</th><th>Acciones</th></tr></thead><tbody id="tablaMarcas"></tbody></table></div></div>
+            </div>
+        </section>
+
+        <section id="section-reportes" class="section-hidden">
+            <div style="padding: 24px;">
+                <h2 class="font-display" style="font-size: 28px; color: white; margin-bottom: 24px;">📊 Reportes</h2>
+                <div style="display: flex; gap: 8px; margin-bottom: 24px; flex-wrap: wrap;">
+                    <button class="tab-btn active" onclick="showReportTab('ventasMensuales', this)">📈 Ventas Mensuales</button>
+                    <button class="tab-btn" onclick="showReportTab('rentabilidad', this)">💰 Rentabilidad</button>
+                    <button class="tab-btn" onclick="showReportTab('clientesTop', this)">👑 Mejores Clientes</button>
+                    <button class="tab-btn" onclick="showReportTab('productos', this)">🍕 Por Producto</button>
+                </div>
+                <div id="report-ventasMensuales" class="card"><h3 style="color: white; margin-bottom: 16px;">Ventas Mensuales</h3><div class="chart-container"><canvas id="chartVentasMensuales"></canvas></div></div>
+                <div id="report-rentabilidad" class="card section-hidden"><h3 style="color: white; margin-bottom: 16px;">Rentabilidad</h3><div id="rentabilidadContent"></div></div>
+                <div id="report-clientesTop" class="card section-hidden"><h3 style="color: white; margin-bottom: 16px;">Mejores Clientes</h3><div class="chart-container"><canvas id="chartClientesTop"></canvas></div></div>
+                <div id="report-productos" class="card section-hidden"><h3 style="color: white; margin-bottom: 16px;">Ventas por Producto</h3><div class="chart-container"><canvas id="chartProductos"></canvas></div></div>
+            </div>
+        </section>
+
+        <section id="section-guia" class="section-hidden">
+            <div style="padding: 24px;">
+                <h2 class="font-display" style="font-size: 28px; color: white; margin-bottom: 24px;">💡 Guía</h2>
+                <div class="tip-card"><h4>📱 WhatsApp Business</h4><ul><li><strong style="color:white;">Etiquetas:</strong> "Almacén", "Deudor", "Pagó".</li><li><strong style="color:white;">Respuestas rápidas:</strong> Precios y horarios automáticos.</li><li><strong style="color:white;">Catálogo:</strong> Fotos de tus pizzas con precios.</li></ul></div>
+                <div class="whatsapp-tip"><strong> Plantilla de pedido:</strong><br>"¡Hola! Soy de Metele 🍕. Resumen:<br>• [Tipo] x[Cantidad] = $[Total]<br>• Entrega: [Fecha]<br>¿Confirmás? ¡Gracias!"</div>
+                <div class="tip-card"><h4>💰 Control Financiero</h4><ul><li><strong style="color:white;">Registro diario:</strong> Anotá cada venta al momento.</li><li><strong style="color:white;">Separa cajas:</strong> Insumos vs ganancias.</li><li><strong style="color:white;">Cobro fijo:</strong> Ej: cada viernes a almacenes.</li><li><strong style="color:white;">Margen:</strong> Calculá costo real antes de fijar precios.</li></ul></div>
+                <div class="tip-card"><h4>🔧 Flujo de Trabajo</h4><ul><li><strong style="color:white;">Mañana:</strong> Preparar pedidos → Registrar "pendiente".</li><li><strong style="color:white;">Entrega:</strong> Cobrar → Registrar "pagado".</li><li><strong style="color:white;">Viernes:</strong> Revisar deudas → Recordatorios WhatsApp.</li><li><strong style="color:white;">Domingo:</strong> Reportes → Planificar compras.</li></ul></div>
+            </div>
+        </section>
+    </main>
+
+    <!-- MODALES -->
+    <div class="modal-overlay" id="modalVenta">
+        <div class="modal">
+            <div class="modal-header"><h3 style="color: white; font-weight: 700;">🍕 Registrar Venta</h3><button onclick="closeModal('modalVenta')" style="background:none;border:none;color:#666;font-size:20px;cursor:pointer;">✕</button></div>
+            <div class="modal-body">
+                <div class="form-group"><label class="form-label">Cliente</label><select class="form-select" id="ventaCliente"><option value="">Seleccionar...</option></select></div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                    <div class="form-group"><label class="form-label">Tipo Pizza</label><select class="form-select" id="ventaTipo" onchange="updateVentaPrecio()"><option value="">...</option><option value="Muzzarella">Muzzarella</option><option value="Especial">Especial</option></select></div>
+                    <div class="form-group"><label class="form-label">Cantidad</label><input type="number" class="form-input" id="ventaCantidad" min="1" value="1" oninput="calcVentaTotal()"></div>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                    <div class="form-group"><label class="form-label">Precio Unit. ($)</label><input type="number" class="form-input" id="ventaPrecio" oninput="calcVentaTotal()"></div>
+                    <div class="form-group"><label class="form-label">Total ($)</label><input type="number" class="form-input" id="ventaTotal" readonly style="color:#FF6B35;font-weight:700;"></div>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                    <div class="form-group"><label class="form-label">Canal</label><select class="form-select" id="ventaCanal"><option value="Almacén">Almacén</option><option value="Cliente Final">Cliente Final</option></select></div>
+                    <div class="form-group"><label class="form-label">Estado Pago</label><select class="form-select" id="ventaEstadoPago" onchange="toggleFechaPago()"><option value="Pagado">Pagado</option><option value="Pendiente">Pendiente</option></select></div>
+                </div>
+                <div id="fechaPagoContainer" class="form-group section-hidden"><label class="form-label">Fecha Estimada de Pago</label><input type="date" class="form-input" id="ventaFechaPago"></div>
+                <div class="form-group"><label class="form-label">Fecha</label><input type="date" class="form-input" id="ventaFecha"></div>
+                <div class="form-group"><label class="form-label">Notas</label><textarea class="form-textarea" id="ventaNotas"></textarea></div>
+            </div>
+            <div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('modalVenta')">Cancelar</button><button class="btn btn-primary" onclick="saveVenta()">💾 Guardar</button></div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="modalCliente">
+        <div class="modal">
+            <div class="modal-header"><h3 style="color: white; font-weight: 700;">👥 <span id="tituloCliente">Nuevo Cliente</span></h3><button onclick="closeModal('modalCliente')" style="background:none;border:none;color:#666;font-size:20px;cursor:pointer;">✕</button></div>
+            <div class="modal-body">
+                <input type="hidden" id="clienteId">
+                <div class="form-group"><label class="form-label">Nombre</label><input type="text" class="form-input" id="clienteNombre" placeholder="Ej: Almacén Don Pepe"></div>
+                <div class="form-group"><label class="form-label">Tipo</label><select class="form-select" id="clienteTipo"><option value="Almacén">Almacén</option><option value="Cliente Final">Cliente Final</option></select></div>
+                <div class="form-group"><label class="form-label">Teléfono</label><input type="text" class="form-input" id="clienteTelefono" placeholder="11-1234-5678"></div>
+                <div class="form-group"><label class="form-label">Dirección</label><input type="text" class="form-input" id="clienteDireccion"></div>
+                <div class="form-group"><label class="form-label">Notas</label><textarea class="form-textarea" id="clienteNotas"></textarea></div>
+            </div>
+            <div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('modalCliente')">Cancelar</button><button class="btn btn-primary" onclick="saveCliente()">💾 Guardar</button></div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="modalInsumo">
+        <div class="modal">
+            <div class="modal-header"><h3 style="color: white; font-weight: 700;">📦 <span id="tituloInsumo">Nuevo Insumo</span></h3><button onclick="closeModal('modalInsumo')" style="background:none;border:none;color:#666;font-size:20px;cursor:pointer;">✕</button></div>
+            <div class="modal-body">
+                <input type="hidden" id="insumoId">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                    <div class="form-group"><label class="form-label">Nombre</label><input type="text" class="form-input" id="insumoNombre"></div>
+                    <div class="form-group"><label class="form-label">Marca</label><input type="text" class="form-input" id="insumoMarca"></div>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
+                    <div class="form-group"><label class="form-label">Unidad</label><select class="form-select" id="insumoUnidad"><option value="kg">kg</option><option value="lt">lt</option><option value="unidad">unidad</option><option value="pack">pack</option></select></div>
+                    <div class="form-group"><label class="form-label">Precio ($)</label><input type="number" class="form-input" id="insumoPrecio"></div>
+                    <div class="form-group"><label class="form-label">Stock</label><input type="number" class="form-input" id="insumoStock" value="0"></div>
+                </div>
+                <div class="form-group"><label class="form-label">Uso por Pizza</label><input type="number" class="form-input" id="insumoUsoPizza" step="0.01" value="0"></div>
+                <div class="form-group"><label class="form-label">Proveedor</label><input type="text" class="form-input" id="insumoProveedor"></div>
+            </div>
+            <div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('modalInsumo')">Cancelar</button><button class="btn btn-primary" onclick="saveInsumo()">💾 Guardar</button></div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="modalMarca">
+        <div class="modal">
+            <div class="modal-header"><h3 style="color: white; font-weight: 700;">🏷️ <span id="tituloMarca">Nueva Marca</span></h3><button onclick="closeModal('modalMarca')" style="background:none;border:none;color:#666;font-size:20px;cursor:pointer;">✕</button></div>
+            <div class="modal-body">
+                <input type="hidden" id="marcaId">
+                <div class="form-group"><label class="form-label">Nombre</label><input type="text" class="form-input" id="marcaNombre"></div>
+                <div class="form-group"><label class="form-label">Tipo Insumo</label><select class="form-select" id="marcaInsumoTipo"><option value="Masa">Masa</option><option value="Salsa">Salsa</option><option value="Queso">Queso</option><option value="Ingredientes">Ingredientes</option><option value="Otros">Otros</option></select></div>
+                <div class="form-group"><label class="form-label">Calidad (1-5)</label><div class="star-rating" id="marcaCalidad"><span class="star" onclick="setCalidad(1)">★</span><span class="star" onclick="setCalidad(2)">★</span><span class="star" onclick="setCalidad(3)">★</span><span class="star" onclick="setCalidad(4)">★</span><span class="star" onclick="setCalidad(5)">★</span></div><input type="hidden" id="marcaCalidadVal" value="3"></div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                    <div class="form-group"><label class="form-label">Precio</label><input type="number" class="form-input" id="marcaPrecio"></div>
+                    <div class="form-group"><label class="form-label">Proveedor</label><input type="text" class="form-input" id="marcaProveedor"></div>
+                </div>
+                <div class="form-group"><label class="form-label">Notas</label><textarea class="form-textarea" id="marcaNotas"></textarea></div>
+            </div>
+            <div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('modalMarca')">Cancelar</button><button class="btn btn-primary" onclick="saveMarca()">💾 Guardar</button></div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="modalPago">
+        <div class="modal">
+            <div class="modal-header"><h3 style="color: white; font-weight: 700;">💵 Registrar Pago</h3><button onclick="closeModal('modalPago')" style="background:none;border:none;color:#666;font-size:20px;cursor:pointer;">✕</button></div>
+            <div class="modal-body">
+                <div class="form-group"><label class="form-label">Venta</label><select class="form-select" id="pagoVenta"></select></div>
+                <div class="form-group"><label class="form-label">Monto ($)</label><input type="number" class="form-input" id="pagoMonto"></div>
+                <div class="form-group"><label class="form-label">Método</label><select class="form-select" id="pagoMetodo"><option value="Efectivo">Efectivo</option><option value="Transferencia">Transferencia</option><option value="MercadoPago">Mercado Pago</option></select></div>
+                <div class="form-group"><label class="form-label">Fecha</label><input type="date" class="form-input" id="pagoFecha"></div>
+            </div>
+            <div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('modalPago')">Cancelar</button><button class="btn btn-success" onclick="savePago()">💵 Registrar</button></div>
+        </div>
+    </div>
+
+    <script>
+    // ==========================================
+    // CONFIGURACIÓN SUPABASE
+    // ==========================================
+    const SUPABASE_URL = 'https://zundvvavprjvqupynryg.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp1bmR2dmF2cHJqdnF1cHlucnlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg0NTE2MDUsImV4cCI6MjA5NDAyNzYwNX0.0w7mYaBw2bgDLTjZJjYn8Fo_gvks_nGcuMNj5L8lpfM';
+    const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    // ==========================================
+    // UTILIDADES
+    // ==========================================
+    function notify(msg, type) {
+        type = type || 'success';
+        var n = document.getElementById('notification');
+        var prefix = type === 'success' ? '✅ ' : type === 'error' ? '❌ ' : 'ℹ️ ';
+        n.textContent = prefix + msg;
+        n.className = 'notification ' + type + ' show';
+        setTimeout(function() { n.classList.remove('show'); }, 3000);
+    }
+
+    function genId() {
+        if (window.crypto && window.crypto.randomUUID) return window.crypto.randomUUID();
+        return Date.now().toString(36) + Math.random().toString(36).slice(2);
+    }
+
+    function fmt(d) {
+        if (!d) return '-';
+        var parts = d.split('-');
+        return parts[2] + '/' + parts[1] + '/' + parts[0];
+    }
+
+    function toggleSidebar() {
+        document.getElementById('sidebar').classList.toggle('open');
+    }
+
+    // ==========================================
+    // BASE DE DATOS
+    // ==========================================
+    function normalize(row) {
+        var o = {};
+        for (var k in row) {
+            if (k === 'created_at') continue;
+            if (k === 'cliente_id') { o.clienteId = row[k]; continue; }
+            if (k === 'venta_id') { o.ventaId = row[k]; continue; }
+            if (k === 'precio_unitario') { o.precioUnitario = parseFloat(row[k]); continue; }
+            if (k === 'fecha_pago_estimado') { o.fechaPagoEstimado = row[k]; continue; }
+            if (k === 'uso_por_pizza') { o.usoPorPizza = parseFloat(row[k]); continue; }
+            if (k === 'insumo_tipo') { o.insumoTipo = row[k]; continue; }
+            o[k] = row[k];
+        }
+        var nums = ['cantidad', 'precioUnitario', 'total', 'monto', 'precio', 'stock', 'usoPorPizza', 'calidad'];
+        for (var i = 0; i < nums.length; i++) {
+            if (o[nums[i]] !== undefined && o[nums[i]] !== null) o[nums[i]] = parseFloat(o[nums[i]]);
+        }
+        return o;
+    }
+
+    function toSnake(d) {
+        var o = {};
+        for (var k in d) {
+            var snake = k.replace(/[A-Z]/g, function(m) { return '_' + m.toLowerCase(); });
+            o[snake] = d[k];
+        }
+        return o;
+    }
+
+    async function dbGet(table) {
+        var result = await sb.from(table).select('*');
+        if (result.error) {
+            console.error('Error getting ' + table, result.error);
+            return [];
+        }
+        var items = [];
+        for (var i = 0; i < result.data.length; i++) items.push(normalize(result.data[i]));
+        return items;
+    }
+
+    async function dbInsert(table, d) {
+        var result = await sb.from(table).insert(toSnake(d));
+        if (result.error) { notify('Error: ' + result.error.message, 'error'); return false; }
+        return true;
+    }
+
+    async function dbUpdate(table, id, d) {
+        var result = await sb.from(table).update(toSnake(d)).eq('id', id);
+        if (result.error) { notify('Error: ' + result.error.message, 'error'); return false; }
+        return true;
+    }
+
+    async function dbDelete(table, id) {
+        var result = await sb.from(table).delete().eq('id', id);
+        if (result.error) { notify('Error: ' + result.error.message, 'error'); return false; }
+        return true;
+    }
+
+    // ==========================================
+    // NAVEGACIÓN
+    // ==========================================
+    function showSection(s) {
+        var sections = document.querySelectorAll('main > section');
+        for (var i = 0; i < sections.length; i++) sections[i].classList.add('section-hidden');
+        document.getElementById('section-' + s).classList.remove('section-hidden');
+        var navItems = document.querySelectorAll('.nav-item');
+        for (var i = 0; i < navItems.length; i++) {
+            navItems[i].classList.toggle('active', navItems[i].getAttribute('data-section') === s);
+        }
+        document.getElementById('sidebar').classList.remove('open');
+        if (s === 'dashboard') updateDashboard();
+        if (s === 'ventas') renderVentas();
+        if (s === 'clientes') renderClientes();
+        if (s === 'deudas') renderDeudas();
+        if (s === 'insumos') renderInsumos();
+        if (s === 'marcas') renderMarcas();
+        if (s === 'reportes') renderReportes();
+    }
+
+    // ==========================================
+    // MODALES
+    // ==========================================
+    function openModal(id) {
+        document.getElementById(id).classList.add('active');
+        if (id === 'modalVenta') {
+            document.getElementById('ventaFecha').value = new Date().toISOString().split('T')[0];
+            populateClientes();
+        }
+        if (id === 'modalPago') {
+            document.getElementById('pagoFecha').value = new Date().toISOString().split('T')[0];
+            populateVentasParaPago();
+        }
+    }
+
+    function closeModal(id) {
+        document.getElementById(id).classList.remove('active');
+    }
+
+    async function populateClientes() {
+        var clientes = await dbGet('clientes');
+        var sel = document.getElementById('ventaCliente');
+        var html = '<option value="">Seleccionar...</option>';
+        for (var i = 0; i < clientes.length; i++) {
+            html += '<option value="' + clientes[i].id + '">' + clientes[i].nombre + ' (' + clientes[i].tipo + ')</option>';
+        }
+        sel.innerHTML = html;
+    }
+
+    async function populateVentasParaPago() {
+        var ventas = await dbGet('ventas');
+        var pagos = await dbGet('pagos');
+        var sel = document.getElementById('pagoVenta');
+        var html = '<option value="">Seleccionar...</option>';
+        for (var i = 0; i < ventas.length; i++) {
+            if (ventas[i].estadoPago !== 'Pagado') {
+                var pagado = 0;
+                for (var j = 0; j < pagos.length; j++) {
+                    if (pagos[j].ventaId === ventas[i].id) pagado += pagos[j].monto;
+                }
+                var restante = ventas[i].total - pagado;
+                html += '<option value="' + ventas[i].id + '">' + ventas[i].tipo + ' x' + ventas[i].cantidad + ' - Restante: $' + restante.toLocaleString() + '</option>';
+            }
+        }
+        sel.innerHTML = html;
+    }
+
+    // ==========================================
+    // CLIENTES
+    // ==========================================
+    async function renderClientes() {
+        var clientes = await dbGet('clientes');
+        var ventas = await dbGet('ventas');
+        var pagos = await dbGet('pagos');
+        var search = (document.getElementById('searchCliente') || {}).value || '';
+        search = search.toLowerCase();
+        var filtered = [];
+        for (var i = 0; i < clientes.length; i++) {
+            if (clientes[i].nombre.toLowerCase().indexOf(search) !== -1) filtered.push(clientes[i]);
+        }
+        var tb = document.getElementById('tablaClientes');
+        if (filtered.length === 0) {
+            tb.innerHTML = '<tr><td colspan="7" class="empty-state">No hay clientes registrados</td></tr>';
+            return;
+        }
+        var html = '';
+        for (var i = 0; i < filtered.length; i++) {
+            var c = filtered[i];
+            var totCompras = 0;
+            for (var j = 0; j < ventas.length; j++) {
+                if (ventas[j].clienteId === c.id) totCompras += ventas[j].total;
+            }
+            var deuda = calcDeuda(c.id, ventas, pagos);
+            var badgeClass = c.tipo === 'Almacen' || c.tipo === 'Almacén' ? 'badge-almacen' : 'badge-cliente';
+            var debtColor = deuda > 0 ? '#EF4444' : '#22C55E';
+            var waLink = c.telefono ? '<a href="https://wa.me/54' + c.telefono.replace(/\D/g, '') + '" target="_blank" class="btn btn-success btn-sm" style="text-decoration:none;margin-left:4px;">📱</a>' : '';
+            html += '<tr><td><strong>' + c.nombre + '</strong></td><td><span class="badge ' + badgeClass + '">' + c.tipo + '</span></td><td>' + (c.telefono || '-') + '</td><td>' + (c.direccion || '-') + '</td><td>$' + totCompras.toLocaleString() + '</td><td style="color:' + debtColor + '">$' + deuda.toLocaleString() + '</td><td><button class="btn btn-secondary btn-sm" onclick="editCliente(\'' + c.id + '\')">✏️</button> <button class="btn btn-danger btn-sm" onclick="deleteCliente(\'' + c.id + '\')">🗑️</button> ' + waLink + '</td></tr>';
+        }
+        tb.innerHTML = html;
+    }
+
+    async function saveCliente() {
+        var id = document.getElementById('clienteId').value;
+        var d = {
+            id: id || genId(),
+            nombre: document.getElementById('clienteNombre').value.trim(),
+            tipo: document.getElementById('clienteTipo').value,
+            telefono: document.getElementById('clienteTelefono').value.trim(),
+            direccion: document.getElementById('clienteDireccion').value.trim(),
+            notas: document.getElementById('clienteNotas').value.trim()
+        };
+        if (!d.nombre) { notify('El nombre es obligatorio', 'error'); return; }
+        var ok = id ? await dbUpdate('clientes', id, d) : await dbInsert('clientes', d);
+        if (ok) {
+            closeModal('modalCliente');
+            clearClienteForm();
+            renderClientes();
+            notify(id ? 'Cliente actualizado' : 'Cliente registrado');
+        }
+    }
+
+    async function editCliente(id) {
+        var clientes = await dbGet('clientes');
+        var c = null;
+        for (var i = 0; i < clientes.length; i++) { if (clientes[i].id === id) { c = clientes[i]; break; } }
+        if (!c) return;
+        document.getElementById('clienteId').value = c.id;
+        document.getElementById('clienteNombre').value = c.nombre;
+        document.getElementById('clienteTipo').value = c.tipo;
+        document.getElementById('clienteTelefono').value = c.telefono || '';
+        document.getElementById('clienteDireccion').value = c.direccion || '';
+        document.getElementById('clienteNotas').value = c.notas || '';
+        document.getElementById('tituloCliente').textContent = 'Editar Cliente';
+        openModal('modalCliente');
+    }
+
+    async function deleteCliente(id) {
+        if (!confirm('¿Eliminar este cliente?')) return;
+        if (await dbDelete('clientes', id)) {
+            notify('Cliente eliminado');
+            renderClientes();
+        }
+    }
+
+    function clearClienteForm() {
+        document.getElementById('clienteId').value = '';
+        document.getElementById('clienteNombre').value = '';
+        document.getElementById('clienteTipo').value = 'Almacén';
+        document.getElementById('clienteTelefono').value = '';
+        document.getElementById('clienteDireccion').value = '';
+        document.getElementById('clienteNotas').value = '';
+        document.getElementById('tituloCliente').textContent = 'Nuevo Cliente';
+    }
+
+    function calcDeuda(cid, ventas, pagos) {
+        var totalVentas = 0;
+        for (var i = 0; i < ventas.length; i++) {
+            if (ventas[i].clienteId === cid) totalVentas += ventas[i].total;
+        }
+        var totalPagos = 0;
+        for (var i = 0; i < pagos.length; i++) {
+            var ventaEncontrada = null;
+            for (var j = 0; j < ventas.length; j++) {
+                if (ventas[j].id === pagos[i].ventaId) { ventaEncontrada = ventas[j]; break; }
+            }
+            if (ventaEncontrada && ventaEncontrada.clienteId === cid) totalPagos += pagos[i].monto;
+        }
+        return Math.max(0, totalVentas - totalPagos);
+    }
+
+    // ==========================================
+    // VENTAS
+    // ==========================================
+    function updateVentaPrecio() {
+        var tipo = document.getElementById('ventaTipo').value;
+        if (tipo === 'Muzzarella') document.getElementById('ventaPrecio').value = 5000;
+        if (tipo === 'Especial') document.getElementById('ventaPrecio').value = 7000;
+        calcVentaTotal();
+    }
+
+    function calcVentaTotal() {
+        var cant = parseInt(document.getElementById('ventaCantidad').value) || 0;
+        var precio = parseFloat(document.getElementById('ventaPrecio').value) || 0;
+        document.getElementById('ventaTotal').value = cant * precio;
+    }
+
+    function toggleFechaPago() {
+        var estado = document.getElementById('ventaEstadoPago').value;
+        var container = document.getElementById('fechaPagoContainer');
+        if (estado === 'Pendiente') {
+            container.classList.remove('section-hidden');
+            var nextWeek = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+            document.getElementById('ventaFechaPago').value = nextWeek.toISOString().split('T')[0];
+        } else {
+            container.classList.add('section-hidden');
+        }
+    }
+
+    async function renderVentas() {
+        var ventas = await dbGet('ventas');
+        var clientes = await dbGet('clientes');
+        var search = (document.getElementById('searchVenta') || {}).value || '';
+        search = search.toLowerCase();
+        var filterTipo = document.getElementById('filterVentaTipo').value;
+        var filtered = [];
+        for (var i = 0; i < ventas.length; i++) {
+            var v = ventas[i];
+            var cliente = null;
+            for (var j = 0; j < clientes.length; j++) { if (clientes[j].id === v.clienteId) { cliente = clientes[j]; break; } }
+            var nombre = cliente ? cliente.nombre.toLowerCase() : '';
+            var match = (!search || nombre.indexOf(search) !== -1 || v.tipo.toLowerCase().indexOf(search) !== -1);
+            var matchTipo = !filterTipo || v.tipo === filterTipo;
+            if (match && matchTipo) filtered.push(v);
+        }
+        filtered.sort(function(a, b) { return b.fecha > a.fecha ? 1 : -1; });
+        var tb = document.getElementById('tablaVentas');
+        if (filtered.length === 0) {
+            tb.innerHTML = '<tr><td colspan="8" class="empty-state">No hay ventas registradas</td></tr>';
+            return;
+        }
+        var html = '';
+        for (var i = 0; i < filtered.length; i++) {
+            var v = filtered[i];
+            var cliente = null;
+            for (var j = 0; j < clientes.length; j++) { if (clientes[j].id === v.clienteId) { cliente = clientes[j]; break; } }
+            var hoy = new Date().toISOString().split('T')[0];
+            var vto = v.fechaPagoEstimado && v.fechaPagoEstimado < hoy;
+            var badgeClass = v.estadoPago === 'Pagado' ? 'badge-paid' : (vto ? 'badge-overdue' : 'badge-pending');
+            var estadoText = v.estadoPago === 'Pagado' ? 'Pagado' : (vto ? 'Vencido' : 'Pendiente');
+            html += '<tr><td>' + fmt(v.fecha) + '</td><td>' + (cliente ? cliente.nombre : 'N/A') + '</td><td>' + v.tipo + '</td><td>' + v.cantidad + '</td><td>$' + v.precioUnitario.toLocaleString() + '</td><td>$' + v.total.toLocaleString() + '</td><td><span class="badge ' + badgeClass + '">' + estadoText + '</span></td><td><button class="btn btn-secondary btn-sm" onclick="editVenta(\'' + v.id + '\')">✏️</button> <button class="btn btn-danger btn-sm" onclick="deleteVenta(\'' + v.id + '\')">🗑️</button></td></tr>';
+        }
+        tb.innerHTML = html;
+    }
+
+    async function saveVenta() {
+        var inp = document.querySelector('#modalVenta input[type=hidden]');
+        var id = inp ? inp.value : '';
+        var d = {
+            id: id || genId(),
+            clienteId: document.getElementById('ventaCliente').value,
+            tipo: document.getElementById('ventaTipo').value,
+            cantidad: parseInt(document.getElementById('ventaCantidad').value),
+            precioUnitario: parseFloat(document.getElementById('ventaPrecio').value),
+            total: parseFloat(document.getElementById('ventaTotal').value),
+            canal: document.getElementById('ventaCanal').value,
+            estadoPago: document.getElementById('ventaEstadoPago').value,
+            fechaPagoEstimado: document.getElementById('ventaFechaPago').value || null,
+            fecha: document.getElementById('ventaFecha').value,
+            notas: document.getElementById('ventaNotas').value.trim()
+        };
+        if (!d.clienteId || !d.tipo || !d.cantidad) { notify('Faltan datos', 'error'); return; }
+        var ok = id ? await dbUpdate('ventas', id, d) : await dbInsert('ventas', d);
+        if (ok) {
+            closeModal('modalVenta');
+            clearVentaForm();
+            renderVentas();
+            updateDashboard();
+            notify(id ? 'Venta actualizada' : 'Venta registrada');
+        }
+    }
+
+    async function editVenta(id) {
+        var ventas = await dbGet('ventas');
+        var v = null;
+        for (var i = 0; i < ventas.length; i++) { if (ventas[i].id === id) { v = ventas[i]; break; } }
+        if (!v) return;
+        await populateClientes();
+        setTimeout(function() {
+            var inp = document.querySelector('#modalVenta input[type=hidden]');
+            if (!inp) {
+                inp = document.createElement('input');
+                inp.type = 'hidden';
+                inp.id = 'ventaId';
+                document.querySelector('#modalVenta .modal-body').prepend(inp);
+            }
+            inp.value = v.id;
+            document.getElementById('ventaCliente').value = v.clienteId;
+            document.getElementById('ventaTipo').value = v.tipo;
+            document.getElementById('ventaCantidad').value = v.cantidad;
+            document.getElementById('ventaPrecio').value = v.precioUnitario;
+            document.getElementById('ventaTotal').value = v.total;
+            document.getElementById('ventaCanal').value = v.canal;
+            document.getElementById('ventaEstadoPago').value = v.estadoPago;
+            document.getElementById('ventaFechaPago').value = v.fechaPagoEstimado || '';
+            document.getElementById('ventaFecha').value = v.fecha;
+            document.getElementById('ventaNotas').value = v.notas || '';
+            toggleFechaPago();
+        }, 100);
+        openModal('modalVenta');
+    }
+
+    async function deleteVenta(id) {
+        if (!confirm('¿Eliminar esta venta?')) return;
+        if (await dbDelete('ventas', id)) {
+            var pagos = await dbGet('pagos');
+            for (var i = 0; i < pagos.length; i++) {
+                if (pagos[i].ventaId === id) await dbDelete('pagos', pagos[i].id);
+            }
+            notify('Venta eliminada');
+            renderVentas();
+            updateDashboard();
+        }
+    }
+
+    function clearVentaForm() {
+        var inp = document.querySelector('#modalVenta input[type=hidden]');
+        if (inp) inp.remove();
+        document.getElementById('ventaCliente').value = '';
+        document.getElementById('ventaTipo').value = '';
+        document.getElementById('ventaCantidad').value = 1;
+        document.getElementById('ventaPrecio').value = '';
+        document.getElementById('ventaTotal').value = '';
+        document.getElementById('ventaEstadoPago').value = 'Pagado';
+        document.getElementById('ventaFechaPago').value = '';
+        document.getElementById('fechaPagoContainer').classList.add('section-hidden');
+        document.getElementById('ventaNotas').value = '';
+    }
+
+    // ==========================================
+    // PAGOS
+    // ==========================================
+    async function savePago() {
+        var d = {
+            id: genId(),
+            ventaId: document.getElementById('pagoVenta').value,
+            monto: parseFloat(document.getElementById('pagoMonto').value),
+            metodo: document.getElementById('pagoMetodo').value,
+            fecha: document.getElementById('pagoFecha').value
+        };
+        if (!d.ventaId || !d.monto) { notify('Faltan datos', 'error'); return; }
+        var ventas = await dbGet('ventas');
+        var venta = null;
+        for (var i = 0; i < ventas.length; i++) { if (ventas[i].id === d.ventaId) { venta = ventas[i]; break; } }
+        if (!venta) { notify('Venta no encontrada', 'error'); return; }
+        var pagos = await dbGet('pagos');
+        var pagado = 0;
+        for (var i = 0; i < pagos.length; i++) { if (pagos[i].ventaId === d.ventaId) pagado += pagos[i].monto; }
+        if (pagado + d.monto > venta.total) { notify('El pago excede la deuda', 'error'); return; }
+        if (await dbInsert('pagos', d)) {
+            if (pagado + d.monto >= venta.total) {
+                await dbUpdate('ventas', d.ventaId, { estadoPago: 'Pagado' });
+            }
+            closeModal('modalPago');
+            document.getElementById('pagoMonto').value = '';
+            renderDeudas();
+            updateDashboard();
+            notify('Pago registrado');
+        }
+    }
+
+    async function deletePago(id) {
+        if (!confirm('¿Eliminar este pago?')) return;
+        if (await dbDelete('pagos', id)) {
+            notify('Pago eliminado');
+            renderDeudas();
+            updateDashboard();
+        }
+    }
+
+    async function renderDeudas() {
+        var ventas = await dbGet('ventas');
+        var clientes = await dbGet('clientes');
+        var pagos = await dbGet('pagos');
+        var hoy = new Date().toISOString().split('T')[0];
+        var pend = [];
+        for (var i = 0; i < ventas.length; i++) {
+            if (ventas[i].estadoPago !== 'Pagado') pend.push(ventas[i]);
+        }
+        var totD = 0, venc = 0;
+        for (var i = 0; i < pend.length; i++) {
+            var pagado = 0;
+            for (var j = 0; j < pagos.length; j++) { if (pagos[j].ventaId === pend[i].id) pagado += pagos[j].monto; }
+            var rest = pend[i].total - pagado;
+            totD += rest;
+            if (pend[i].fechaPagoEstimado && pend[i].fechaPagoEstimado < hoy) venc += rest;
+        }
+        var mesActual = hoy.substring(0, 7);
+        var cobMes = 0;
+        for (var i = 0; i < pagos.length; i++) {
+            if (pagos[i].fecha && pagos[i].fecha.substring(0, 7) === mesActual) cobMes += pagos[i].monto;
+        }
+        document.getElementById('kpiTotalDeudas').textContent = '$' + totD.toLocaleString();
+        document.getElementById('kpiDeudasVencidas').textContent = '$' + venc.toLocaleString();
+        document.getElementById('kpiCobradasMes').textContent = '$' + cobMes.toLocaleString();
+        var tb = document.getElementById('tablaDeudas');
+        if (pend.length === 0) {
+            tb.innerHTML = '<tr><td colspan="8" class="empty-state">🎉 ¡Sin deudas pendientes!</td></tr>';
+        } else {
+            pend.sort(function(a, b) { return (a.fechaPagoEstimado || '9999') > (b.fechaPagoEstimado || '9999') ? 1 : -1; });
+            var html = '';
+            for (var i = 0; i < pend.length; i++) {
+                var v = pend[i];
+                var cliente = null;
+                for (var j = 0; j < clientes.length; j++) { if (clientes[j].id === v.clienteId) { cliente = clientes[j]; break; } }
+                var pagado = 0;
+                for (var j = 0; j < pagos.length; j++) { if (pagos[j].ventaId === v.id) pagado += pagos[j].monto; }
+                var rest = v.total - pagado;
+                var vto = v.fechaPagoEstimado && v.fechaPagoEstimado < hoy;
+                html += '<tr><td>' + (cliente ? cliente.nombre : 'N/A') + '</td><td>' + v.tipo + ' x' + v.cantidad + '</td><td>$' + v.total.toLocaleString() + '</td><td>$' + pagado.toLocaleString() + '</td><td style="color:#EF4444;font-weight:700">$' + rest.toLocaleString() + '</td><td>' + (v.fechaPagoEstimado ? fmt(v.fechaPagoEstimado) : '-') + '</td><td><span class="badge ' + (vto ? 'badge-overdue' : 'badge-pending') + '">' + (vto ? 'VENCIDO' : 'Pendiente') + '</span></td><td><button class="btn btn-success btn-sm" onclick="quickPay(\'' + v.id + '\',' + rest + ')">💵</button></td></tr>';
+            }
+            tb.innerHTML = html;
+        }
+        var tp = document.getElementById('tablaPagos');
+        var pagosSorted = pagos.slice().sort(function(a, b) { return b.fecha > a.fecha ? 1 : -1; });
+        if (pagosSorted.length === 0) {
+            tp.innerHTML = '<tr><td colspan="5" class="empty-state">No hay pagos registrados</td></tr>';
+        } else {
+            var html = '';
+            for (var i = 0; i < pagosSorted.length; i++) {
+                var p = pagosSorted[i];
+                var vt = null;
+                for (var j = 0; j < ventas.length; j++) { if (ventas[j].id === p.ventaId) { vt = ventas[j]; break; } }
+                var cl = vt ? (clientes.find ? clientes.find(function(c) { return c.id === vt.clienteId; }) : null) : null;
+                var nombreCl = cl ? cl.nombre : 'N/A';
+                html += '<tr><td>' + fmt(p.fecha) + '</td><td>' + nombreCl + '</td><td style="color:#22C55E;font-weight:700">$' + p.monto.toLocaleString() + '</td><td>' + p.metodo + '</td><td><button class="btn btn-danger btn-sm" onclick="deletePago(\'' + p.id + '\')">🗑️</button></td></tr>';
+            }
+            tp.innerHTML = html;
+        }
+    }
+
+    function quickPay(vid, rest) {
+        populateVentasParaPago();
+        setTimeout(function() {
+            document.getElementById('pagoVenta').value = vid;
+            document.getElementById('pagoMonto').value = rest;
+            openModal('modalPago');
+        }, 100);
+    }
+
+    // ==========================================
+    // INSUMOS
+    // ==========================================
+    async function renderInsumos() {
+        var insumos = await dbGet('insumos');
+        var costo = 0;
+        for (var i = 0; i < insumos.length; i++) costo += (insumos[i].precio || 0) * (insumos[i].usoPorPizza || 0);
+        var tipos = ['Muzzarella', 'Especial'];
+        var preciosVenta = { 'Muzzarella': 5000, 'Especial': 7000 };
+        var html = '';
+        for (var i = 0; i < tipos.length; i++) {
+            var pv = preciosVenta[tipos[i]];
+            var gan = pv - costo;
+            var margen = pv > 0 ? ((gan / pv) * 100).toFixed(1) : 0;
+            html += '<div style="background:#0f0f0f;padding:16px;border-radius:12px;"><h4 style="color:#FF6B35;margin-bottom:8px;">🍕 ' + tipos[i] + '</h4><p style="color:#666;font-size:13px;">Costo prod: <b style="color:white">$' + costo.toLocaleString() + '</b><br>Precio venta: <b style="color:white">$' + pv.toLocaleString() + '</b><br>Ganancia: <b style="color:#22C55E">$' + gan.toLocaleString() + '</b> (' + margen + '%)</p></div>';
+        }
+        document.getElementById('costoPorPizza').innerHTML = html;
+        var tb = document.getElementById('tablaInsumos');
+        if (insumos.length === 0) {
+            tb.innerHTML = '<tr><td colspan="8" class="empty-state">No hay insumos</td></tr>';
+            return;
+        }
+        html = '';
+        for (var i = 0; i < insumos.length; i++) {
+            var x = insumos[i];
+            var costoPizza = (x.precio || 0) * (x.usoPorPizza || 0);
+            html += '<tr><td><b>' + x.nombre + '</b></td><td>' + (x.marca || '-') + '</td><td>' + x.unidad + '</td><td>$' + x.precio.toLocaleString() + '</td><td>' + x.stock + '</td><td>' + (x.usoPorPizza || 0) + '</td><td style="color:#F59E0B">$' + costoPizza.toLocaleString() + '</td><td><button class="btn btn-secondary btn-sm" onclick="editInsumo(\'' + x.id + '\')">✏️</button> <button class="btn btn-danger btn-sm" onclick="deleteInsumo(\'' + x.id + '\')">🗑️</button></td></tr>';
+        }
+        tb.innerHTML = html;
+    }
+
+    async function saveInsumo() {
+        var id = document.getElementById('insumoId').value;
+        var d = {
+            id: id || genId(),
+            nombre: document.getElementById('insumoNombre').value.trim(),
+            marca: document.getElementById('insumoMarca').value.trim(),
+            unidad: document.getElementById('insumoUnidad').value,
+            precio: parseFloat(document.getElementById('insumoPrecio').value),
+            stock: parseFloat(document.getElementById('insumoStock').value),
+            usoPorPizza: parseFloat(document.getElementById('insumoUsoPizza').value),
+            proveedor: document.getElementById('insumoProveedor').value.trim()
+        };
+        if (!d.nombre || !d.precio) { notify('Faltan datos', 'error'); return; }
+        var ok = id ? await dbUpdate('insumos', id, d) : await dbInsert('insumos', d);
+        if (ok) {
+            closeModal('modalInsumo');
+            clearInsumoForm();
+            renderInsumos();
+            notify(id ? 'Insumo actualizado' : 'Insumo registrado');
+        }
+    }
+
+    async function editInsumo(id) {
+        var insumos = await dbGet('insumos');
+        var i = null;
+        for (var j = 0; j < insumos.length; j++) { if (insumos[j].id === id) { i = insumos[j]; break; } }
+        if (!i) return;
+        document.getElementById('insumoId').value = i.id;
+        document.getElementById('insumoNombre').value = i.nombre;
+        document.getElementById('insumoMarca').value = i.marca || '';
+        document.getElementById('insumoUnidad').value = i.unidad;
+        document.getElementById('insumoPrecio').value = i.precio;
+        document.getElementById('insumoStock').value = i.stock;
+        document.getElementById('insumoUsoPizza').value = i.usoPorPizza || 0;
+        document.getElementById('insumoProveedor').value = i.proveedor || '';
+        document.getElementById('tituloInsumo').textContent = 'Editar Insumo';
+        openModal('modalInsumo');
+    }
+
+    async function deleteInsumo(id) {
+        if (!confirm('¿Eliminar este insumo?')) return;
+        if (await dbDelete('insumos', id)) { notify('Insumo eliminado'); renderInsumos(); }
+    }
+
+    function clearInsumoForm() {
+        document.getElementById('insumoId').value = '';
+        document.getElementById('insumoNombre').value = '';
+        document.getElementById('insumoMarca').value = '';
+        document.getElementById('insumoPrecio').value = '';
+        document.getElementById('insumoStock').value = 0;
+        document.getElementById('insumoUsoPizza').value = 0;
+        document.getElementById('insumoProveedor').value = '';
+        document.getElementById('tituloInsumo').textContent = 'Nuevo Insumo';
+    }
+
+    // ==========================================
+    // MARCAS
+    // ==========================================
+    function setCalidad(v) {
+        var stars = document.querySelectorAll('#marcaCalidad .star');
+        for (var i = 0; i < stars.length; i++) stars[i].classList.toggle('active', i < v);
+        document.getElementById('marcaCalidadVal').value = v;
+    }
+
+    async function renderMarcas() {
+        var marcas = await dbGet('marcas');
+        var tb = document.getElementById('tablaMarcas');
+        if (marcas.length === 0) {
+            tb.innerHTML = '<tr><td colspan="7" class="empty-state">No hay marcas</td></tr>';
+            return;
+        }
+        var html = '';
+        for (var i = 0; i < marcas.length; i++) {
+            var m = marcas[i];
+            var stars = '';
+            for (var s = 1; s <= 5; s++) stars += '<span class="star ' + (s <= m.calidad ? 'active' : '') + '" style="cursor:default;">★</span>';
+            html += '<tr><td><b>' + m.nombre + '</b></td><td>' + m.insumoTipo + '</td><td><span class="star-rating" style="cursor:default">' + stars + '</span> <span class="badge badge-quality-' + m.calidad + '">' + m.calidad + '/5</span></td><td>' + (m.precio ? '$' + m.precio.toLocaleString() : '-') + '</td><td>' + (m.proveedor || '-') + '</td><td>' + (m.notas || '-') + '</td><td><button class="btn btn-secondary btn-sm" onclick="editMarca(\'' + m.id + '\')">✏️</button> <button class="btn btn-danger btn-sm" onclick="deleteMarca(\'' + m.id + '\')">🗑️</button></td></tr>';
+        }
+        tb.innerHTML = html;
+    }
+
+    async function saveMarca() {
+        var id = document.getElementById('marcaId').value;
+        var d = {
+            id: id || genId(),
+            nombre: document.getElementById('marcaNombre').value.trim(),
+            insumoTipo: document.getElementById('marcaInsumoTipo').value,
+            calidad: parseInt(document.getElementById('marcaCalidadVal').value),
+            precio: parseFloat(document.getElementById('marcaPrecio').value) || 0,
+            proveedor: document.getElementById('marcaProveedor').value.trim(),
+            notas: document.getElementById('marcaNotas').value.trim()
+        };
+        if (!d.nombre) { notify('Nombre obligatorio', 'error'); return; }
+        var ok = id ? await dbUpdate('marcas', id, d) : await dbInsert('marcas', d);
+        if (ok) {
+            closeModal('modalMarca');
+            clearMarcaForm();
+            renderMarcas();
+            notify(id ? 'Marca actualizada' : 'Marca registrada');
+        }
+    }
+
+    async function editMarca(id) {
+        var marcas = await dbGet('marcas');
+        var m = null;
+        for (var i = 0; i < marcas.length; i++) { if (marcas[i].id === id) { m = marcas[i]; break; } }
+        if (!m) return;
+        document.getElementById('marcaId').value = m.id;
+        document.getElementById('marcaNombre').value = m.nombre;
+        document.getElementById('marcaInsumoTipo').value = m.insumoTipo;
+        setCalidad(m.calidad);
+        document.getElementById('marcaPrecio').value = m.precio || '';
+        document.getElementById('marcaProveedor').value = m.proveedor || '';
+        document.getElementById('marcaNotas').value = m.notas || '';
+        document.getElementById('tituloMarca').textContent = 'Editar Marca';
+        openModal('modalMarca');
+    }
+
+    async function deleteMarca(id) {
+        if (!confirm('¿Eliminar esta marca?')) return;
+        if (await dbDelete('marcas', id)) { notify('Marca eliminada'); renderMarcas(); }
+    }
+
+    function clearMarcaForm() {
+        document.getElementById('marcaId').value = '';
+        document.getElementById('marcaNombre').value = '';
+        setCalidad(3);
+        document.getElementById('tituloMarca').textContent = 'Nueva Marca';
+    }
+
+    // ==========================================
+    // DASHBOARD
+    // ==========================================
+    var chartVentasTipo = null;
+    var chartVentasCanal = null;
+
+    async function updateDashboard() {
+        var ventas = await dbGet('ventas');
+        var clientes = await dbGet('clientes');
+        var pagos = await dbGet('pagos');
+        var insumos = await dbGet('insumos');
+        var mes = new Date().toISOString().substring(0, 7);
+        var vm = ventas.filter(function(v) { return v.fecha && v.fecha.substring(0, 7) === mes; });
+        var tv = vm.reduce(function(s, v) { return s + v.total; }, 0);
+        var ct = 0;
+        for (var i = 0; i < insumos.length; i++) {
+            var totalUso = ventas.reduce(function(s, v) { return s + v.cantidad * (insumos[i].usoPorPizza || 0); }, 0);
+            ct += totalUso * insumos[i].precio;
+        }
+        var gan = tv - ct;
+        var td = 0;
+        var pend = ventas.filter(function(v) { return v.estadoPago !== 'Pagado'; });
+        for (var i = 0; i < pend.length; i++) {
+            var pagado = pagos.filter(function(p) { return p.ventaId === pend[i].id; }).reduce(function(s, p) { return s + p.monto; }, 0);
+            td += pend[i].total - pagado;
+        }
+        var totalPizzas = ventas.reduce(function(s, v) { return s + v.cantidad; }, 0);
+        document.getElementById('kpiVentasMes').textContent = '$' + tv.toLocaleString();
+        document.getElementById('kpiGanancia').textContent = '$' + gan.toLocaleString();
+        document.getElementById('kpiClientes').textContent = clientes.length;
+        document.getElementById('kpiDeudas').textContent = '$' + Math.max(0, td).toLocaleString();
+        document.getElementById('kpiPizzas').textContent = totalPizzas;
+
+        // Charts
+        if (chartVentasTipo) chartVentasTipo.destroy();
+        if (chartVentasCanal) chartVentasCanal.destroy();
+        var tipos = {};
+        ventas.forEach(function(v) { tipos[v.tipo] = (tipos[v.tipo] || 0) + v.total; });
+        chartVentasTipo = new Chart(document.getElementById('chartVentasTipo'), {
+            type: 'bar',
+            data: {
+                labels: Object.keys(tipos),
+                datasets: [{
+                    label: 'Ventas',
+                    data: Object.values(tipos),
+                    backgroundColor: ['#FF6B35', '#FFD700'],
+                    borderRadius: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#a0a0c0' } },
+                    x: { grid: { display: false }, ticks: { color: '#a0a0c0' } }
+                }
+            }
+        });
+        var canales = {};
+        ventas.forEach(function(v) { canales[v.canal] = (canales[v.canal] || 0) + v.total; });
+        chartVentasCanal = new Chart(document.getElementById('chartVentasCanal'), {
+            type: 'doughnut',
+            data: {
+                labels: Object.keys(canales),
+                datasets: [{
+                    data: Object.values(canales),
+                    backgroundColor: ['#3B82F6', '#A855F7']
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { position: 'bottom', labels: { color: '#a0a0c0' } } }
+            }
+        });
+
+        // Últimas ventas
+        var dv = document.getElementById('dashboardVentas');
+        var sorted = ventas.slice().sort(function(a, b) { return b.fecha > a.fecha ? 1 : -1; }).slice(0, 5);
+        if (sorted.length === 0) {
+            dv.innerHTML = '<tr><td colspan="6" class="empty-state">Sin ventas aún</td></tr>';
+        } else {
+            var html = '';
+            for (var i = 0; i < sorted.length; i++) {
+                var v = sorted[i];
+                var cl = null;
+                for (var j = 0; j < clientes.length; j++) { if (clientes[j].id === v.clienteId) { cl = clientes[j]; break; } }
+                html += '<tr><td>' + fmt(v.fecha) + '</td><td>' + (cl ? cl.nombre : 'N/A') + '</td><td>' + v.tipo + '</td><td>' + v.cantidad + '</td><td>$' + v.total.toLocaleString() + '</td><td><span class="badge ' + (v.estadoPago === 'Pagado' ? 'badge-paid' : 'badge-pending') + '">' + v.estadoPago + '</span></td></tr>';
+            }
+            dv.innerHTML = html;
+        }
+    }
+
+    // ==========================================
+    // REPORTES
+    // ==========================================
+    var chartMensuales = null;
+    var chartClientesTop = null;
+    var chartProductos = null;
+
+    function showReportTab(t, btn) {
+        var reports = document.querySelectorAll('[id^="report-"]');
+        for (var i = 0; i < reports.length; i++) reports[i].classList.add('section-hidden');
+        document.getElementById('report-' + t).classList.remove('section-hidden');
+        var tabs = document.querySelectorAll('.tab-btn');
+        for (var i = 0; i < tabs.length; i++) tabs[i].classList.remove('active');
+        btn.classList.add('active');
+        renderReportes();
+    }
+
+    async function renderReportes() {
+        var ventas = await dbGet('ventas');
+        var clientes = await dbGet('clientes');
+        var insumos = await dbGet('insumos');
+        // Ventas mensuales
+        var meses = {};
+        ventas.forEach(function(v) {
+            var m = v.fecha ? v.fecha.substring(0, 7) : 'Sin fecha';
+            meses[m] = (meses[m] || 0) + v.total;
+        });
+        var sk = Object.keys(meses).sort();
+        if (chartMensuales) chartMensuales.destroy();
+        chartMensuales = new Chart(document.getElementById('chartVentasMensuales'), {
+            type: 'line',
+            data: {
+                labels: sk,
+                datasets: [{
+                    label: 'Ventas',
+                    data: sk.map(function(m) { return meses[m]; }),
+                    borderColor: '#FF6B35',
+                    backgroundColor: 'rgba(255,107,53,0.1)',
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { labels: { color: '#a0a0c0' } } },
+                scales: {
+                    y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#a0a0c0' } },
+                    x: { grid: { display: false }, ticks: { color: '#a0a0c0' } }
+                }
+            }
+        });
+        // Rentabilidad
+        var ti = ventas.reduce(function(s, v) { return s + v.total; }, 0);
+        var ci = 0;
+        insumos.forEach(function(x) { ci += ventas.reduce(function(s, v) { return s + v.cantidad * (x.usoPorPizza || 0); }, 0) * x.precio; });
+        var gn = ti - ci;
+        var mg = ti > 0 ? ((gn / ti) * 100).toFixed(1) : 0;
+        document.getElementById('rentabilidadContent').innerHTML = '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:16px;"><div style="background:#0f0f0f;padding:16px;border-radius:12px;"><p style="color:#666;font-size:12px;">Ingresos</p><p style="font-size:24px;font-weight:800;color:white">$' + ti.toLocaleString() + '</p></div><div style="background:#0f0f0f;padding:16px;border-radius:12px;"><p style="color:#666;font-size:12px;">Costo Insumos</p><p style="font-size:24px;font-weight:800;color:#EF4444">$' + ci.toLocaleString() + '</p></div><div style="background:#0f0f0f;padding:16px;border-radius:12px;"><p style="color:#666;font-size:12px;">Ganancia</p><p style="font-size:24px;font-weight:800;color:#22C55E">$' + gn.toLocaleString() + '</p></div><div style="background:#0f0f0f;padding:16px;border-radius:12px;"><p style="color:#666;font-size:12px;">Margen</p><p style="font-size:24px;font-weight:800;color:#FFD700">' + mg + '%</p></div></div><div style="height:24px;background:#0f0f0f;border-radius:12px;overflow:hidden;"><div style="width:' + mg + '%;height:100%;background:linear-gradient(90deg,#22C55E,#4ADE80);border-radius:12px;"></div></div>';
+        // Mejores clientes
+        var cv = {};
+        ventas.forEach(function(v) { cv[v.clienteId] = (cv[v.clienteId] || 0) + v.total; });
+        var top = Object.entries(cv).map(function(entry) {
+            var id = entry[0], t = entry[1];
+            var nombre = 'N/A';
+            for (var i = 0; i < clientes.length; i++) { if (clientes[i].id === id) { nombre = clientes[i].nombre; break; } }
+            return { n: nombre, t: t };
+        }).sort(function(a, b) { return b.t - a.t; }).slice(0, 5);
+        if (chartClientesTop) chartClientesTop.destroy();
+        chartClientesTop = new Chart(document.getElementById('chartClientesTop'), {
+            type: 'bar',
+            data: {
+                labels: top.map(function(x) { return x.n; }),
+                datasets: [{
+                    label: 'Compras',
+                    data: top.map(function(x) { return x.t; }),
+                    backgroundColor: ['#FF6B35', '#FF8F5E', '#FFB088', '#FFD0B5', '#FFE8D8'],
+                    borderRadius: 8
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#a0a0c0' } },
+                    y: { grid: { display: false }, ticks: { color: '#a0a0c0' } }
+                }
+            }
+        });
+        // Por producto
+        var pv = {};
+        ventas.forEach(function(v) { pv[v.tipo] = (pv[v.tipo] || 0) + v.cantidad; });
+        if (chartProductos) chartProductos.destroy();
+        chartProductos = new Chart(document.getElementById('chartProductos'), {
+            type: 'pie',
+            data: {
+                labels: Object.keys(pv),
+                datasets: [{
+                    data: Object.values(pv),
+                    backgroundColor: ['#FF6B35', '#FFD700', '#22C55E', '#3B82F6']
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { position: 'bottom', labels: { color: '#a0a0c0' } } }
+            }
+        });
+    }
+
+    // ==========================================
+    // EXPORT / IMPORT
+    // ==========================================
+    async function exportData() {
+        var d = {
+            clientes: await dbGet('clientes'),
+            ventas: await dbGet('ventas'),
+            insumos: await dbGet('insumos'),
+            marcas: await dbGet('marcas'),
+            pagos: await dbGet('pagos')
+        };
+        var blob = new Blob([JSON.stringify(d, null, 2)], { type: 'application/json' });
+        var a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'metele_backup_' + new Date().toISOString().split('T')[0] + '.json';
+        a.click();
+        URL.revokeObjectURL(a.href);
+        notify('Datos exportados');
+    }
+
+    async function importData(e) {
+        var file = e.target.files[0];
+        if (!file) return;
+        var reader = new FileReader();
+        reader.onload = async function(ev) {
+            try {
+                var d = JSON.parse(ev.target.result);
+                if (d.clientes) for (var i = 0; i < d.clientes.length; i++) await dbInsert('clientes', d.clientes[i]);
+                if (d.ventas) for (var i = 0; i < d.ventas.length; i++) await dbInsert('ventas', d.ventas[i]);
+                if (d.insumos) for (var i = 0; i < d.insumos.length; i++) await dbInsert('insumos', d.insumos[i]);
+                if (d.marcas) for (var i = 0; i < d.marcas.length; i++) await dbInsert('marcas', d.marcas[i]);
+                if (d.pagos) for (var i = 0; i < d.pagos.length; i++) await dbInsert('pagos', d.pagos[i]);
+                notify('Datos importados');
+                updateDashboard();
+            } catch (err) {
+                notify('Error al importar', 'error');
+            }
+        };
+        reader.readAsText(file);
+        e.target.value = '';
+    }
+
+    // ==========================================
+    // SEED (Datos de ejemplo)
+    // ==========================================
+    async function seed() {
+        var clientes = await dbGet('clientes');
+        if (clientes.length > 0) return;
+        var ids = [genId(), genId(), genId()];
+        await dbInsert('clientes', { id: ids[0], nombre: 'Almacén Don Pepe', tipo: 'Almacén', telefono: '11-1234-5678', direccion: 'San Martín 1234', notas: 'Lunes y Jueves' });
+        await dbInsert('clientes', { id: ids[1], nombre: 'Almacén La Esquina', tipo: 'Almacén', telefono: '11-9876-5432', direccion: 'Rivadavia 567', notas: 'Viernes' });
+        await dbInsert('clientes', { id: ids[2], nombre: 'María García', tipo: 'Cliente Final', telefono: '11-5555-1234', direccion: 'Belgrano 890' });
+        await dbInsert('insumos', { id: genId(), nombre: 'Harina 000', marca: 'Cocinero', unidad: 'kg', precio: 1500, stock: 20, usoPorPizza: 0.3, proveedor: 'Mayorista' });
+        await dbInsert('insumos', { id: genId(), nombre: 'Muzzarella', marca: 'La Serenísima', unidad: 'kg', precio: 8000, stock: 10, usoPorPizza: 0.2 });
+        await dbInsert('insumos', { id: genId(), nombre: 'Salsa Tomate', marca: 'Arcor', unidad: 'kg', precio: 2500, stock: 8, usoPorPizza: 0.05 });
+        await dbInsert('marcas', { id: genId(), nombre: 'Cocinero', insumoTipo: 'Masa', calidad: 4, precio: 1500, proveedor: 'Mayorista', notas: 'Buena relación precio-calidad' });
+        await dbInsert('marcas', { id: genId(), nombre: 'La Serenísima', insumoTipo: 'Queso', calidad: 5, precio: 8000, notas: 'La mejor muzzarella' });
+        await new Promise(function(r) { setTimeout(r, 500); });
+        var c = await dbGet('clientes');
+        if (c.length >= 3) {
+            var v1 = genId(), v2 = genId(), v3 = genId(), v4 = genId(), v5 = genId();
+            await dbInsert('ventas', { id: v1, clienteId: c[0].id, tipo: 'Muzzarella', cantidad: 10, precioUnitario: 5000, total: 50000, canal: 'Almacén', estadoPago: 'Pagado', fechaPagoEstimado: null, fecha: '2026-05-01' });
+            await dbInsert('ventas', { id: v2, clienteId: c[0].id, tipo: 'Especial', cantidad: 5, precioUnitario: 7000, total: 35000, canal: 'Almacén', estadoPago: 'Pendiente', fechaPagoEstimado: '2026-05-15', fecha: '2026-05-04' });
+            await dbInsert('ventas', { id: v3, clienteId: c[1].id, tipo: 'Muzzarella', cantidad: 8, precioUnitario: 5000, total: 40000, canal: 'Almacén', estadoPago: 'Pagado', fechaPagoEstimado: null, fecha: '2026-05-05' });
+            await dbInsert('ventas', { id: v4, clienteId: c[2].id, tipo: 'Muzzarella', cantidad: 2, precioUnitario: 6000, total: 12000, canal: 'Cliente Final', estadoPago: 'Pagado', fechaPagoEstimado: null, fecha: '2026-05-08' });
+            await dbInsert('ventas', { id: v5, clienteId: c[2].id, tipo: 'Especial', cantidad: 1, precioUnitario: 7500, total: 7500, canal: 'Cliente Final', estadoPago: 'Pagado', fechaPagoEstimado: null, fecha: '2026-05-10' });
+            await dbInsert('pagos', { id: genId(), ventaId: v1, monto: 50000, metodo: 'Transferencia', fecha: '2026-05-01' });
+            await dbInsert('pagos', { id: genId(), ventaId: v3, monto: 40000, metodo: 'Efectivo', fecha: '2026-05-05' });
+            await dbInsert('pagos', { id: genId(), ventaId: v4, monto: 12000, metodo: 'MercadoPago', fecha: '2026-05-08' });
+            await dbInsert('pagos', { id: genId(), ventaId: v5, monto: 7500, metodo: 'Efectivo', fecha: '2026-05-10' });
+        }
+        notify('¡Bienvenido a Metele! Datos de ejemplo cargados', 'info');
+    }
+
+    // ==========================================
+    // INIT
+    // ==========================================
+    seed().then(function() { updateDashboard(); });
+    </script>
+</body>
+</html>
+
