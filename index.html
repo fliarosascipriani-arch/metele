@@ -3,1282 +3,1218 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Metele - Sistema de Gesti&oacute;n</title>
+    <title>Metele</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Poppins:wght@600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Poppins:wght@700;800&display=swap" rel="stylesheet">
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Inter', sans-serif; background: #0f0f0f; color: #e0e0e0; }
-        .font-display { font-family: 'Poppins', sans-serif; }
-        #loginScreen { position: fixed; inset: 0; background: linear-gradient(135deg, #0f0f0f 0%, #1a1a2e 50%, #0f0f0f 100%); z-index: 9999; display: flex; align-items: center; justify-content: center; }
-        #loginScreen.hidden { display: none !important; }
-        .login-box { background: #1a1a2e; border: 1px solid #2a2a4a; border-radius: 24px; padding: 48px; width: 90%; max-width: 400px; text-align: center; }
-        .login-icon { width: 80px; height: 80px; background: linear-gradient(135deg, #FF6B35, #FF8F5E); border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 36px; margin: 0 auto 24px; }
-        .login-input-wrap { position: relative; width: 100%; margin-bottom: 12px; }
-        .login-input { width: 100%; padding: 14px 48px 14px 16px; background: #0f0f0f; border: 1px solid #2a2a4a; border-radius: 12px; color: white; font-size: 16px; }
-        .login-input:focus { outline: none; border-color: #FF6B35; }
-        .eye-btn { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #666; cursor: pointer; font-size: 18px; padding: 4px; }
-        .eye-btn:hover { color: #FF6B35; }
-        .login-btn { width: 100%; padding: 14px; background: linear-gradient(135deg, #FF6B35, #FF8F5E); color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: 700; cursor: pointer; transition: all 0.2s; margin-top: 8px; }
-        .login-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(255,107,53,0.4); }
-        .login-error { color: #EF4444; font-size: 13px; margin-top: 8px; display: none; }
-        .sidebar { position: fixed; left: 0; top: 0; bottom: 0; width: 260px; background: #16162b; border-right: 1px solid #2a2a4a; z-index: 50; overflow-y: auto; }
-        .main-content { margin-left: 260px; min-height: 100vh; }
-        .nav-item { display: flex; align-items: center; gap: 12px; padding: 12px 20px; cursor: pointer; transition: all 0.2s; border-left: 3px solid transparent; color: #a0a0c0; font-size: 14px; font-weight: 500; }
-        .nav-item:hover { background: rgba(255,107,53,0.1); color: #FF6B35; }
-        .nav-item.active { background: rgba(255,107,53,0.15); color: #FF6B35; border-left-color: #FF6B35; }
-        .nav-item svg { width: 20px; height: 20px; flex-shrink: 0; }
-        .card { background: #1a1a2e; border: 1px solid #2a2a4a; border-radius: 16px; padding: 24px; margin-bottom: 16px; }
-        .kpi-card { position: relative; overflow: hidden; }
-        .kpi-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; }
-        .kpi-card.orange::before { background: linear-gradient(90deg, #FF6B35, #FF8F5E); }
-        .kpi-card.green::before { background: linear-gradient(90deg, #22C55E, #4ADE80); }
-        .kpi-card.blue::before { background: linear-gradient(90deg, #3B82F6, #60A5FA); }
-        .kpi-card.yellow::before { background: linear-gradient(90deg, #F59E0B, #FBBF24); }
-        .kpi-card.red::before { background: linear-gradient(90deg, #EF4444, #F87171); }
-        .kpi-card.purple::before { background: linear-gradient(90deg, #A855F7, #C084FC); }
-        .btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; border-radius: 10px; font-weight: 600; font-size: 14px; cursor: pointer; transition: all 0.2s; border: none; }
-        .btn-primary { background: linear-gradient(135deg, #FF6B35, #FF8F5E); color: white; }
-        .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 15px rgba(255,107,53,0.4); }
-        .btn-secondary { background: #1a1a2e; color: white; border: 1px solid #2a2a4a; }
-        .btn-success { background: linear-gradient(135deg, #22C55E, #4ADE80); color: white; }
-        .btn-danger { background: linear-gradient(135deg, #EF4444, #F87171); color: white; }
-        .btn-sm { padding: 6px 12px; font-size: 12px; border-radius: 8px; }
-        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); z-index: 100; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
-        .modal-overlay.active { opacity: 1; pointer-events: all; }
-        .modal { background: #1a1a2e; border: 1px solid #2a2a4a; border-radius: 20px; width: 90%; max-width: 650px; max-height: 90vh; overflow-y: auto; }
-        .modal-header { padding: 24px; border-bottom: 1px solid #2a2a4a; display: flex; align-items: center; justify-content: space-between; }
-        .modal-body { padding: 24px; }
-        .modal-footer { padding: 16px 24px; border-top: 1px solid #2a2a4a; display: flex; justify-content: flex-end; gap: 12px; }
-        .form-group { margin-bottom: 16px; }
-        .form-label { display: block; font-size: 13px; font-weight: 600; color: #a0a0c0; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
-        .form-input, .form-select, .form-textarea { width: 100%; padding: 10px 14px; background: #0f0f0f; border: 1px solid #2a2a4a; border-radius: 10px; color: white; font-size: 14px; }
-        .form-input:focus, .form-select:focus, .form-textarea:focus { outline: none; border-color: #FF6B35; }
-        .item-row { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr auto; gap: 8px; align-items: end; margin-bottom: 8px; padding: 12px; background: #0f0f0f; border-radius: 10px; border: 1px solid #2a2a4a; }
-        .item-row label { font-size: 11px; color: #666; display: block; margin-bottom: 4px; }
-        .item-row .form-input, .item-row .form-select { padding: 8px 10px; font-size: 13px; }
-        .item-subtotal { font-weight: 700; color: #FF6B35; text-align: center; padding-top: 20px; font-size: 14px; }
-        .remove-item { background: none; border: none; color: #EF4444; cursor: pointer; font-size: 18px; padding-top: 20px; }
-        .remove-item:hover { color: #F87171; }
-        .table-container { overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; }
-        th { padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 700; color: #a0a0c0; text-transform: uppercase; border-bottom: 1px solid #2a2a4a; white-space: nowrap; }
-        td { padding: 12px 16px; font-size: 14px; border-bottom: 1px solid rgba(255,255,255,0.05); }
-        tr:hover td { background: rgba(255,107,53,0.05); }
-        .badge { display: inline-flex; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
-        .badge-pagado { background: rgba(34,197,94,0.15); color: #22C55E; }
-        .badge-pendiente { background: rgba(245,158,11,0.15); color: #F59E0B; }
-        .badge-vencido { background: rgba(239,68,68,0.15); color: #EF4444; }
-        .badge-almacen { background: rgba(59,130,246,0.15); color: #3B82F6; }
-        .badge-cliente { background: rgba(168,85,247,0.15); color: #A855F7; }
-        .badge-proceso { background: rgba(59,130,246,0.15); color: #3B82F6; }
-        .badge-entregado { background: rgba(34,197,94,0.15); color: #22C55E; }
-        .badge-item { background: rgba(255,107,53,0.1); color: #FF6B35; font-size: 10px; padding: 2px 6px; border-radius: 4px; margin: 1px; display: inline-block; }
-        .star-rating { display: flex; gap: 2px; cursor: pointer; }
-        .star { font-size: 20px; color: #444; transition: color 0.2s; }
-        .star.active { color: #FFD700; }
-        .tab-btn { padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; color: #a0a0c0; background: transparent; border: none; }
-        .tab-btn.active { background: #FF6B35; color: white; }
-        .search-input { position: relative; }
-        .search-input svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 18px; height: 18px; color: #a0a0c0; }
-        .search-input input { padding-left: 38px; }
-        .section-hidden { display: none !important; }
-        .notification { position: fixed; top: 20px; right: 20px; z-index: 200; padding: 16px 24px; border-radius: 12px; font-weight: 600; transform: translateX(120%); transition: transform 0.3s; }
-        .notification.show { transform: translateX(0); }
-        .notification.success { background: #22C55E; color: white; }
-        .notification.error { background: #EF4444; color: white; }
-        .notification.info { background: #3B82F6; color: white; }
-        .chart-container { position: relative; height: 300px; }
-        .tip-card { background: linear-gradient(135deg, rgba(255,107,53,0.1), rgba(255,215,0,0.05)); border: 1px solid rgba(255,107,53,0.2); border-radius: 12px; padding: 20px; margin-bottom: 16px; }
-        .tip-card h4 { color: #FF6B35; margin-bottom: 8px; }
-        .tip-card ul { color: #a0a0c0; padding-left: 20px; line-height: 1.8; }
-        .whatsapp-tip { background: linear-gradient(135deg, #25D366, #128C7E); color: white; border-radius: 12px; padding: 16px; margin: 12px 0; }
-        .empty-state { text-align: center; padding: 40px; color: #a0a0c0; }
-        .hamburger { display: none; position: fixed; top: 16px; left: 16px; z-index: 60; background: #1a1a2e; border: 1px solid #2a2a4a; border-radius: 10px; padding: 8px; cursor: pointer; }
-        @media (max-width: 768px) {
-            .sidebar { transform: translateX(-260px); transition: transform 0.3s; }
-            .sidebar.open { transform: translateX(0); }
-            .main-content { margin-left: 0 !important; }
-            .hamburger { display: block; }
-        }
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:Inter,sans-serif;background:#0f0f0f;color:#e0e0e0}
+        .fd{font-family:Poppins,sans-serif}
+        #ls{position:fixed;inset:0;background:linear-gradient(135deg,#0f0f0f,#1a1a2e,#0f0f0f);z-index:9999;display:flex;align-items:center;justify-content:center}
+        #ls.h{display:none!important}
+        .lb{background:#1a1a2e;border:1px solid #2a2a4a;border-radius:24px;padding:48px;width:90%;max-width:400px;text-align:center}
+        .li{width:80px;height:80px;background:linear-gradient(135deg,#FF6B35,#FF8F5E);border-radius:20px;display:flex;align-items:center;justify-content:center;font-size:36px;margin:0 auto 24px}
+        .lw{position:relative;width:100%;margin-bottom:12px}
+        .li2{width:100%;padding:14px 48px 14px 16px;background:#0f0f0f;border:1px solid #2a2a4a;border-radius:12px;color:white;font-size:16px}
+        .li2:focus{outline:none;border-color:#FF6B35}
+        .eb{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:#666;cursor:pointer;font-size:18px;padding:4px}
+        .eb:hover{color:#FF6B35}
+        .lb2{width:100%;padding:14px;background:linear-gradient(135deg,#FF6B35,#FF8F5E);color:white;border:none;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer;transition:all .2s;margin-top:8px}
+        .lb2:hover{transform:translateY(-2px);box-shadow:0 8px 25px rgba(255,107,53,.4)}
+        .le{color:#EF4444;font-size:13px;margin-top:8px;display:none}
+        .sb{position:fixed;left:0;top:0;bottom:0;width:260px;background:#16162b;border-right:1px solid #2a2a4a;z-index:50;overflow-y:auto}
+        .mc{margin-left:260px;min-height:100vh}
+        .ni{display:flex;align-items:center;gap:12px;padding:12px 20px;cursor:pointer;transition:all .2s;border-left:3px solid transparent;color:#a0a0c0;font-size:14px;font-weight:500}
+        .ni:hover{background:rgba(255,107,53,.1);color:#FF6B35}
+        .ni.a{background:rgba(255,107,53,.15);color:#FF6B35;border-left-color:#FF6B35}
+        .ni svg{width:20px;height:20px;flex-shrink:0}
+        .ca{background:#1a1a2e;border:1px solid #2a2a4a;border-radius:16px;padding:24px;margin-bottom:16px}
+        .kc{position:relative;overflow:hidden}
+        .kc::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+        .kc.o::before{background:linear-gradient(90deg,#FF6B35,#FF8F5E)}
+        .kc.g::before{background:linear-gradient(90deg,#22C55E,#4ADE80)}
+        .kc.b::before{background:linear-gradient(90deg,#3B82F6,#60A5FA)}
+        .kc.y::before{background:linear-gradient(90deg,#F59E0B,#FBBF24)}
+        .kc.r::before{background:linear-gradient(90deg,#EF4444,#F87171)}
+        .kc.p::before{background:linear-gradient(90deg,#A855F7,#C084FC)}
+        .btn{display:inline-flex;align-items:center;gap:8px;padding:10px 20px;border-radius:10px;font-weight:600;font-size:14px;cursor:pointer;transition:all .2s;border:none}
+        .bp{background:linear-gradient(135deg,#FF6B35,#FF8F5E);color:white}
+        .bp:hover{transform:translateY(-1px);box-shadow:0 4px 15px rgba(255,107,53,.4)}
+        .bs{background:#1a1a2e;color:white;border:1px solid #2a2a4a}
+        .bg{background:linear-gradient(135deg,#22C55E,#4ADE80);color:white}
+        .bd{background:linear-gradient(135deg,#EF4444,#F87171);color:white}
+        .bsm{padding:6px 12px;font-size:12px;border-radius:8px}
+        .mo{position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);z-index:100;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .3s}
+        .mo.a{opacity:1;pointer-events:all}
+        .md{background:#1a1a2e;border:1px solid #2a2a4a;border-radius:20px;width:90%;max-width:650px;max-height:90vh;overflow-y:auto}
+        .mh{padding:24px;border-bottom:1px solid #2a2a4a;display:flex;align-items:center;justify-content:space-between}
+        .mb{padding:24px}
+        .mf{padding:16px 24px;border-top:1px solid #2a2a4a;display:flex;justify-content:flex-end;gap:12px}
+        .fg{margin-bottom:16px}
+        .fl{display:block;font-size:13px;font-weight:600;color:#a0a0c0;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px}
+        .fi,.fs,.ft{width:100%;padding:10px 14px;background:#0f0f0f;border:1px solid #2a2a4a;border-radius:10px;color:white;font-size:14px}
+        .fi:focus,.fs:focus,.ft:focus{outline:none;border-color:#FF6B35}
+        .ir{display:grid;grid-template-columns:2fr 1fr 1fr 1fr auto;gap:8px;align-items:end;margin-bottom:8px;padding:12px;background:#0f0f0f;border-radius:10px;border:1px solid #2a2a4a}
+        .ir label{font-size:11px;color:#666;display:block;margin-bottom:4px}
+        .ir .fi,.ir .fs{padding:8px 10px;font-size:13px}
+        .is2{font-weight:700;color:#FF6B35;text-align:center;padding-top:20px;font-size:14px}
+        .ri{background:none;border:none;color:#EF4444;cursor:pointer;font-size:18px;padding-top:20px}
+        .ri:hover{color:#F87171}
+        .tc{overflow-x:auto}
+        table{width:100%;border-collapse:collapse}
+        th{padding:12px 16px;text-align:left;font-size:12px;font-weight:700;color:#a0a0c0;text-transform:uppercase;border-bottom:1px solid #2a2a4a;white-space:nowrap}
+        td{padding:12px 16px;font-size:14px;border-bottom:1px solid rgba(255,255,255,.05)}
+        tr:hover td{background:rgba(255,107,53,.05)}
+        .ba{display:inline-flex;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700}
+        .ba-p{background:rgba(34,197,94,.15);color:#22C55E}
+        .ba-pn{background:rgba(245,158,11,.15);color:#F59E0B}
+        .ba-v{background:rgba(239,68,68,.15);color:#EF4444}
+        .ba-al{background:rgba(59,130,246,.15);color:#3B82F6}
+        .ba-cl{background:rgba(168,85,247,.15);color:#A855F7}
+        .ba-pr{background:rgba(59,130,246,.15);color:#3B82F6}
+        .ba-e{background:rgba(34,197,94,.15);color:#22C55E}
+        .bi{background:rgba(255,107,53,.1);color:#FF6B35;font-size:10px;padding:2px 6px;border-radius:4px;margin:1px;display:inline-block}
+        .sr{display:flex;gap:2px;cursor:pointer}
+        .st{font-size:20px;color:#444;transition:color .2s}
+        .st.a{color:#FFD700}
+        .tb{padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;color:#a0a0c0;background:transparent;border:none}
+        .tb.a{background:#FF6B35;color:white}
+        .si{position:relative}
+        .si svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);width:18px;height:18px;color:#a0a0c0}
+        .si input{padding-left:38px}
+        .sh{display:none!important}
+        .nt{position:fixed;top:20px;right:20px;z-index:200;padding:16px 24px;border-radius:12px;font-weight:600;transform:translateX(120%);transition:transform .3s}
+        .nt.s{transform:translateX(0)}
+        .nt.ok{background:#22C55E;color:white}
+        .nt.er{background:#EF4444;color:white}
+        .nt.inf{background:#3B82F6;color:white}
+        .cc{position:relative;height:300px}
+        .tk{background:linear-gradient(135deg,rgba(255,107,53,.1),rgba(255,215,0,.05));border:1px solid rgba(255,107,53,.2);border-radius:12px;padding:20px;margin-bottom:16px}
+        .tk h4{color:#FF6B35;margin-bottom:8px}
+        .tk ul{color:#a0a0c0;padding-left:20px;line-height:1.8}
+        .wt{background:linear-gradient(135deg,#25D366,#128C7E);color:white;border-radius:12px;padding:16px;margin:12px 0}
+        .es{text-align:center;padding:40px;color:#a0a0c0}
+        .hb{display:none;position:fixed;top:16px;left:16px;z-index:60;background:#1a1a2e;border:1px solid #2a2a4a;border-radius:10px;padding:8px;cursor:pointer}
+        @media(max-width:768px){.sb{transform:translateX(-260px);transition:transform .3s}.sb.op{transform:translateX(0)}.mc{margin-left:0!important}.hb{display:block}}
     </style>
 </head>
 <body>
 
-    <div id="loginScreen">
-        <div class="login-box">
-            <div class="login-icon">🍕</div>
-            <h2 class="font-display" style="font-size: 28px; color: #FF6B35; margin-bottom: 4px;">Metele</h2>
-            <p style="color: #666; margin-bottom: 32px;">Sistema de Gesti&oacute;n</p>
-            <div class="login-input-wrap">
-                <input type="text" class="login-input" id="loginUser" placeholder="Usuario" autocomplete="off">
-            </div>
-            <div class="login-input-wrap">
-                <input type="password" class="login-input" id="loginPass" placeholder="Contrase&ntilde;a">
-                <button type="button" class="eye-btn" onclick="togglePass()">
-                    <svg id="eyeIcon" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                    <svg id="eyeOffIcon" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="section-hidden"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
-                </button>
-            </div>
-            <button class="login-btn" onclick="doLogin()">Ingresar</button>
-            <p class="login-error" id="loginError">Usuario o contrase&ntilde;a incorrectos</p>
+<div id="ls">
+    <div class="lb">
+        <div class="li">🍕</div>
+        <h2 class="fd" style="font-size:28px;color:#FF6B35;margin-bottom:4px">Metele</h2>
+        <p style="color:#666;margin-bottom:32px">Sistema de Gesti&oacute;n</p>
+        <div class="lw">
+            <input type="text" class="li2" id="loginUser" placeholder="Usuario" autocomplete="off">
         </div>
+        <div class="lw">
+            <input type="password" class="li2" id="loginPass" placeholder="Contrase&ntilde;a">
+            <button type="button" class="eb" id="eyeBtn" onclick="togglePass()">
+                <svg id="eyeI" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                <svg id="eyeO" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="sh"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+            </button>
+        </div>
+        <button class="lb2" onclick="doLogin()">Ingresar</button>
+        <p class="le" id="loginError">Usuario o contrase&ntilde;a incorrectos</p>
     </div>
+</div>
 
-    <div id="notification" class="notification"></div>
-    <button class="hamburger" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button>
-    <aside class="sidebar section-hidden" id="sidebar">
-        <div style="padding: 20px; border-bottom: 1px solid #2a2a4a; display: flex; align-items: center; gap: 12px;">
-            <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #FF6B35, #FF8F5E); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px;">🍕</div>
-            <div><h1 class="font-display" style="font-size: 20px; color: #FF6B35;">Metele</h1><p style="font-size: 10px; color: #666;">Sistema de Gesti&oacute;n</p></div>
-        </div>
-        <nav style="padding: 12px 0;">
-            <div class="nav-item active" data-section="dashboard" onclick="showSection('dashboard')"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0a1 1 0 01-1-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 01-1 1"/></svg> Dashboard</div>
-            <div class="nav-item" data-section="pedidos" onclick="showSection('pedidos')"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg> Pedidos</div>
-            <div class="nav-item" data-section="clientes" onclick="showSection('clientes')"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg> Clientes</div>
-            <div class="nav-item" data-section="deudas" onclick="showSection('deudas')"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg> Deudas y Pagos</div>
-            <div class="nav-item" data-section="insumos" onclick="showSection('insumos')"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg> Insumos y Costos</div>
-            <div class="nav-item" data-section="marcas" onclick="showSection('marcas')"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg> Marcas</div>
-            <div class="nav-item" data-section="reportes" onclick="showSection('reportes')"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg> Reportes</div>
-            <div class="nav-item" data-section="guia" onclick="showSection('guia')"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg> Gu&iacute;a</div>
-        </nav>
-        <div style="padding: 16px 20px; border-top: 1px solid #2a2a4a;">
-            <div style="display: flex; gap: 8px; margin-bottom: 8px;">
-                <button class="btn btn-secondary btn-sm" style="flex:1" onclick="exportData()">📥 Exportar</button>
-                <button class="btn btn-secondary btn-sm" style="flex:1" onclick="document.getElementById('importFile').click()">📤 Importar</button>
-            </div>
-            <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)">
-            <button class="btn btn-danger btn-sm" style="width:100%;margin-top:12px;justify-content:center;" onclick="doLogout()">🔒 Cerrar sesi&oacute;n</button>
-        </div>
-    </aside>
+<div id="notification" class="nt"></div>
+<button class="hb" onclick="document.getElementById('sidebar').classList.toggle('op')">☰</button>
 
-    <main class="main-content section-hidden" id="mainContent">
-        <section id="section-dashboard">
-            <div style="padding: 24px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
-                    <div><h2 class="font-display" style="font-size: 28px; color: white; margin-bottom: 4px;">Dashboard</h2><p style="color: #666;">Resumen general de pedidos</p></div>
-                    <button class="btn btn-primary" onclick="openModal('modalPedido')" style="font-size: 15px; padding: 12px 24px;">➕ Nuevo Pedido</button>
-                </div>
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 24px;">
-                    <div class="card kpi-card orange"><p style="font-size: 12px; color: #666;">Pedidos del Mes</p><p id="kpiPedidosMes" style="font-size: 28px; font-weight: 800; color: white;">$0</p></div>
-                    <div class="card kpi-card green"><p style="font-size: 12px; color: #666;">Ganancia Neta</p><p id="kpiGanancia" style="font-size: 28px; font-weight: 800; color: #22C55E;">$0</p></div>
-                    <div class="card kpi-card blue"><p style="font-size: 12px; color: #666;">Clientes</p><p id="kpiClientes" style="font-size: 28px; font-weight: 800; color: white;">0</p></div>
-                    <div class="card kpi-card yellow"><p style="font-size: 12px; color: #666;">Deudas</p><p id="kpiDeudas" style="font-size: 28px; font-weight: 800; color: #F59E0B;">$0</p></div>
-                    <div class="card kpi-card purple"><p style="font-size: 12px; color: #666;">En Proceso</p><p id="kpiEnProceso" style="font-size: 28px; font-weight: 800; color: #A855F7;">0</p></div>
-                    <div class="card kpi-card red"><p style="font-size: 12px; color: #666;">Pizzas Vendidas</p><p id="kpiPizzas" style="font-size: 28px; font-weight: 800; color: white;">0</p></div>
-                </div>
-                <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-bottom: 24px;">
-                    <div class="card"><h3 style="color: white; margin-bottom: 16px;">📊 Ventas por Tipo</h3><div class="chart-container"><canvas id="chartPedidosTipo"></canvas></div></div>
-                    <div class="card"><h3 style="color: white; margin-bottom: 16px;">🚚 Por Canal</h3><div class="chart-container"><canvas id="chartPedidosCanal"></canvas></div></div>
-                </div>
-                <div class="card"><h3 style="color: white; margin-bottom: 16px;">📋 Últimos Pedidos</h3><div class="table-container"><table><thead><tr><th>Fecha</th><th>Cliente</th><th>Productos</th><th>Total</th><th>Estado</th><th>Pago</th></tr></thead><tbody id="dashboardPedidos"></tbody></table></div></div>
-            </div>
-        </section>
-        <section id="section-pedidos" class="section-hidden">
-            <div style="padding: 24px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;"><h2 class="font-display" style="font-size: 28px; color: white;">📋 Pedidos</h2><button class="btn btn-primary" onclick="openModal('modalPedido')">➕ Nuevo Pedido</button></div>
-                <div style="display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap;">
-                    <div class="search-input" style="flex:1"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg><input type="text" class="form-input" placeholder="Buscar pedido..." id="searchPedido" oninput="renderPedidos()"></div>
-                    <select class="form-select" id="filterPedidoEstado" onchange="renderPedidos()" style="width:auto"><option value="">Todos</option><option value="Pendiente">Pendiente</option><option value="En proceso">En proceso</option><option value="Entregado">Entregado</option></select>
-                    <select class="form-select" id="filterPedidoPago" onchange="renderPedidos()" style="width:auto"><option value="">Todos</option><option value="Pagado">Pagado</option><option value="Pendiente">Pendiente</option></select>
-                </div>
-                <div class="card"><div class="table-container"><table><thead><tr><th>Fecha</th><th>Cliente</th><th>Productos</th><th>Total</th><th>Estado</th><th>Pago</th><th>Deuda</th><th>Acciones</th></tr></thead><tbody id="tablaPedidos"></tbody></table></div></div>
-            </div>
-        </section>
-        <section id="section-clientes" class="section-hidden">
-            <div style="padding: 24px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;"><h2 class="font-display" style="font-size: 28px; color: white;">👥 Clientes</h2><button class="btn btn-primary" onclick="openModal('modalCliente')">➕ Nuevo Cliente</button></div>
-                <div class="search-input" style="margin-bottom: 16px;"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg><input type="text" class="form-input" placeholder="Buscar cliente..." id="searchCliente" oninput="renderClientes()"></div>
-                <div class="card"><div class="table-container"><table><thead><tr><th>Nombre</th><th>Tipo</th><th>Tel&eacute;fono</th><th>Direcci&oacute;n</th><th>Compras</th><th>Deuda</th><th>Acciones</th></tr></thead><tbody id="tablaClientes"></tbody></table></div></div>
-            </div>
-        </section>
-        <section id="section-deudas" class="section-hidden">
-            <div style="padding: 24px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;"><h2 class="font-display" style="font-size: 28px; color: white;">⏳ Deudas y Pagos</h2><button class="btn btn-primary" onclick="openModal('modalPago')">💵 Registrar Pago</button></div>
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;">
-                    <div class="card kpi-card yellow"><p style="font-size: 12px; color: #666;">Total Deudas</p><p id="kpiTotalDeudas" style="font-size: 28px; font-weight: 800; color: #F59E0B;">$0</p></div>
-                    <div class="card kpi-card red"><p style="font-size: 12px; color: #666;">Vencidas</p><p id="kpiDeudasVencidas" style="font-size: 28px; font-weight: 800; color: #EF4444;">$0</p></div>
-                    <div class="card kpi-card green"><p style="font-size: 12px; color: #666;">Cobradas este Mes</p><p id="kpiCobradasMes" style="font-size: 28px; font-weight: 800; color: #22C55E;">$0</p></div>
-                </div>
-                <div class="card"><h3 style="color: white; margin-bottom: 16px;">📋 Deudas Pendientes</h3><div class="table-container"><table><thead><tr><th>Cliente</th><th>Pedido</th><th>Total</th><th>Pagado</th><th>Restante</th><th>Fecha Pago</th><th>Estado</th><th>Acciones</th></tr></thead><tbody id="tablaDeudas"></tbody></table></div></div>
-                <div class="card" style="margin-top: 16px;"><h3 style="color: white; margin-bottom: 16px;">📋 Historial de Pagos</h3><div class="table-container"><table><thead><tr><th>Fecha</th><th>Cliente</th><th>Monto</th><th>M&eacute;todo</th><th>Acciones</th></tr></thead><tbody id="tablaPagos"></tbody></table></div></div>
-            </div>
-        </section>
-        <section id="section-insumos" class="section-hidden">
-            <div style="padding: 24px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;"><h2 class="font-display" style="font-size: 28px; color: white;">📦 Insumos y Costos</h2><button class="btn btn-primary" onclick="openModal('modalInsumo')">➕ Nuevo Insumo</button></div>
-                <div class="card" style="margin-bottom: 24px;"><h3 style="color: white; margin-bottom: 16px;">💰 Costo por Pizza</h3><div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px;" id="costoPorPizza"></div></div>
-                <div class="card"><div class="table-container"><table><thead><tr><th>Nombre</th><th>Marca</th><th>Unidad</th><th>Precio</th><th>Stock</th><th>Uso/Pizza</th><th>Costo/Pizza</th><th>Acciones</th></tr></thead><tbody id="tablaInsumos"></tbody></table></div></div>
-            </div>
-        </section>
-        <section id="section-marcas" class="section-hidden">
-            <div style="padding: 24px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;"><h2 class="font-display" style="font-size: 28px; color: white;">🏷️ Registro de Marcas</h2><button class="btn btn-primary" onclick="openModal('modalMarca')">➕ Nueva Marca</button></div>
-                <div class="card"><div class="table-container"><table><thead><tr><th>Marca</th><th>Insumo</th><th>Calidad</th><th>Precio</th><th>Proveedor</th><th>Notas</th><th>Acciones</th></tr></thead><tbody id="tablaMarcas"></tbody></table></div></div>
-            </div>
-        </section>
-        <section id="section-reportes" class="section-hidden">
-            <div style="padding: 24px;">
-                <h2 class="font-display" style="font-size: 28px; color: white; margin-bottom: 24px;">📊 Reportes</h2>
-                <div style="display: flex; gap: 8px; margin-bottom: 24px; flex-wrap: wrap;">
-                    <button class="tab-btn active" onclick="showReportTab('mensuales', this)">📈 Mensuales</button>
-                    <button class="tab-btn" onclick="showReportTab('rentabilidad', this)">💰 Rentabilidad</button>
-                    <button class="tab-btn" onclick="showReportTab('clientesTop', this)">👑 Clientes</button>
-                    <button class="tab-btn" onclick="showReportTab('productos', this)">🍕 Productos</button>
-                </div>
-                <div id="report-mensuales" class="card"><h3 style="color: white; margin-bottom: 16px;">Pedidos Mensuales</h3><div class="chart-container"><canvas id="chartMensuales"></canvas></div></div>
-                <div id="report-rentabilidad" class="card section-hidden"><h3 style="color: white; margin-bottom: 16px;">Rentabilidad</h3><div id="rentabilidadContent"></div></div>
-                <div id="report-clientesTop" class="card section-hidden"><h3 style="color: white; margin-bottom: 16px;">Mejores Clientes</h3><div class="chart-container"><canvas id="chartClientesTop"></canvas></div></div>
-                <div id="report-productos" class="card section-hidden"><h3 style="color: white; margin-bottom: 16px;">Por Producto</h3><div class="chart-container"><canvas id="chartProductos"></canvas></div></div>
-            </div>
-        </section>
-        <section id="section-guia" class="section-hidden">
-            <div style="padding: 24px;">
-                <h2 class="font-display" style="font-size: 28px; color: white; margin-bottom: 24px;">💡 Gu&iacute;a</h2>
-                <div class="tip-card"><h4>📋 Estados del Pedido</h4><ul><li><strong style="color:#F59E0B;">Pendiente:</strong> Recibido, a&uacute;n no se prepara.</li><li><strong style="color:#3B82F6;">En proceso:</strong> Preparando/horneando.</li><li><strong style="color:#22C55E;">Entregado:</strong> Entregado al cliente.</li></ul></div>
-                <div class="whatsapp-tip"><strong> Plantilla:</strong><br>"¡Hola! Soy de Metele 🍕<br>• [Tipo] x[Cantidad] = $[Total]<br>• Entrega: [Fecha]<br>¿Confirmás?"</div>
-                <div class="tip-card" style="border-color: #EF4444; background: linear-gradient(135deg, rgba(239,68,68,0.1), rgba(239,68,68,0.05));">
-                    <h4 style="color: #EF4444;">⚠️ Ejecutar en Supabase (una sola vez)</h4>
-                    <p style="color: var(--text-secondary); font-size: 14px; margin-bottom: 8px;">Para habilitar pedidos con m&uacute;ltiples productos, ejecut&aacute; este SQL en Supabase &gt; SQL Editor:</p>
-                    <pre style="background: #0a0a1a; padding: 16px; border-radius: 8px; font-size: 12px; color: #4ADE80; overflow-x: auto; white-space: pre-wrap; cursor: pointer;" onclick="copySQL()">ALTER TABLE pedidos ADD COLUMN IF NOT EXISTS items TEXT;</pre>
-                    <p style="color: #666; font-size: 12px; margin-top: 8px;">Hac&eacute; clic para copiar</p>
-                </div>
-            </div>
-        </section>
-    </main>
-
-    <!-- MODALES -->
-    <div class="modal-overlay" id="modalPedido">
-        <div class="modal">
-            <div class="modal-header"><h3 style="color: white; font-weight: 700;">📋 Nuevo Pedido</h3><button onclick="closeModal('modalPedido')" style="background:none;border:none;color:#666;font-size:20px;cursor:pointer;">✕</button></div>
-            <div class="modal-body">
-                <div class="form-group"><label class="form-label">Cliente</label><select class="form-select" id="pedidoCliente"><option value="">Seleccionar...</option></select></div>
-                <div style="margin-bottom: 12px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                        <label class="form-label" style="margin-bottom: 0;">Productos</label>
-                        <button class="btn btn-sm btn-secondary" onclick="addPedidoItem()">+ Agregar producto</button>
-                    </div>
-                    <div id="pedidoItems"></div>
-                </div>
-                <div style="background: #0f0f0f; padding: 12px 16px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border: 1px solid #2a2a4a;">
-                    <span style="font-size: 14px; color: #a0a0c0;">Total del Pedido:</span>
-                    <span id="pedidoTotalDisplay" style="font-size: 24px; font-weight: 800; color: #FF6B35;">$0</span>
-                </div>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-                    <div class="form-group"><label class="form-label">Canal</label><select class="form-select" id="pedidoCanal"><option value="Almac&eacute;n">Almac&eacute;n</option><option value="Cliente Final">Cliente Final</option></select></div>
-                    <div class="form-group"><label class="form-label">Estado</label><select class="form-select" id="pedidoEstado"><option value="Pendiente">Pendiente</option><option value="En proceso">En proceso</option><option value="Entregado">Entregado</option></select></div>
-                </div>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-                    <div class="form-group"><label class="form-label">Estado de Pago</label><select class="form-select" id="pedidoEstadoPago" onchange="toggleFechaPago()"><option value="Pagado">Pagado</option><option value="Pendiente">Pendiente</option></select></div>
-                    <div class="form-group"><label class="form-label">Fecha</label><input type="date" class="form-input" id="pedidoFecha"></div>
-                </div>
-                <div id="fechaPagoContainer" class="form-group section-hidden"><label class="form-label">Fecha Estimada de Pago</label><input type="date" class="form-input" id="pedidoFechaPago"></div>
-                <div class="form-group"><label class="form-label">Notas</label><textarea class="form-textarea" id="pedidoNotas" rows="2"></textarea></div>
-            </div>
-            <div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('modalPedido')">Cancelar</button><button class="btn btn-primary" onclick="savePedido()">💾 Guardar</button></div>
-        </div>
+<aside class="sb sh" id="sidebar">
+    <div style="padding:20px;border-bottom:1px solid #2a2a4a;display:flex;align-items:center;gap:12px">
+        <div style="width:40px;height:40px;background:linear-gradient(135deg,#FF6B35,#FF8F5E);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px">🍕</div>
+        <div><h1 class="fd" style="font-size:20px;color:#FF6B35">Metele</h1><p style="font-size:10px;color:#666">Sistema de Gesti&oacute;n</p></div>
     </div>
-    <div class="modal-overlay" id="modalCliente">
-        <div class="modal">
-            <div class="modal-header"><h3 style="color: white; font-weight: 700;">👥 <span id="tituloCliente">Nuevo Cliente</span></h3><button onclick="closeModal('modalCliente')" style="background:none;border:none;color:#666;font-size:20px;cursor:pointer;">✕</button></div>
-            <div class="modal-body">
-                <input type="hidden" id="clienteId">
-                <div class="form-group"><label class="form-label">Nombre</label><input type="text" class="form-input" id="clienteNombre" placeholder="Ej: Almac&eacute;n Don Pepe"></div>
-                <div class="form-group"><label class="form-label">Tipo</label><select class="form-select" id="clienteTipo"><option value="Almac&eacute;n">Almac&eacute;n</option><option value="Cliente Final">Cliente Final</option></select></div>
-                <div class="form-group"><label class="form-label">Tel&eacute;fono</label><input type="text" class="form-input" id="clienteTelefono" placeholder="11-1234-5678"></div>
-                <div class="form-group"><label class="form-label">Direcci&oacute;n</label><input type="text" class="form-input" id="clienteDireccion"></div>
-                <div class="form-group"><label class="form-label">Notas</label><textarea class="form-textarea" id="clienteNotas"></textarea></div>
-            </div>
-            <div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('modalCliente')">Cancelar</button><button class="btn btn-primary" onclick="saveCliente()">💾 Guardar</button></div>
+    <nav style="padding:12px 0">
+        <div class="ni a" data-section="dashboard" onclick="showSection('dashboard')"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0a1 1 0 01-1-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 01-1 1"/></svg>Dashboard</div>
+        <div class="ni" data-section="pedidos" onclick="showSection('pedidos')"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg>Pedidos</div>
+        <div class="ni" data-section="clientes" onclick="showSection('clientes')"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>Clientes</div>
+        <div class="ni" data-section="deudas" onclick="showSection('deudas')"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>Deudas y Pagos</div>
+        <div class="ni" data-section="insumos" onclick="showSection('insumos')"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>Insumos</div>
+        <div class="ni" data-section="marcas" onclick="showSection('marcas')"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>Marcas</div>
+        <div class="ni" data-section="reportes" onclick="showSection('reportes')"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>Reportes</div>
+        <div class="ni" data-section="guia" onclick="showSection('guia')"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>Gu&iacute;a</div>
+    </nav>
+    <div style="padding:16px 20px;border-top:1px solid #2a2a4a">
+        <div style="display:flex;gap:8px;margin-bottom:8px">
+            <button class="btn bsm bs" style="flex:1" onclick="exportData()">📥 Exportar</button>
+            <button class="btn bsm bs" style="flex:1" onclick="document.getElementById('importFile').click()">📤 Importar</button>
         </div>
+        <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)">
+        <button class="btn bsm bd" style="width:100%;margin-top:12px;justify-content:center" onclick="doLogout()">🔒 Cerrar sesi&oacute;n</button>
     </div>
-    <div class="modal-overlay" id="modalInsumo">
-        <div class="modal">
-            <div class="modal-header"><h3 style="color: white; font-weight: 700;">📦 <span id="tituloInsumo">Nuevo Insumo</span></h3><button onclick="closeModal('modalInsumo')" style="background:none;border:none;color:#666;font-size:20px;cursor:pointer;">✕</button></div>
-            <div class="modal-body">
-                <input type="hidden" id="insumoId">
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-                    <div class="form-group"><label class="form-label">Nombre</label><input type="text" class="form-input" id="insumoNombre"></div>
-                    <div class="form-group"><label class="form-label">Marca</label><input type="text" class="form-input" id="insumoMarca"></div>
-                </div>
-                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
-                    <div class="form-group"><label class="form-label">Unidad</label><select class="form-select" id="insumoUnidad"><option value="kg">kg</option><option value="lt">lt</option><option value="unidad">unidad</option></select></div>
-                    <div class="form-group"><label class="form-label">Precio ($)</label><input type="number" class="form-input" id="insumoPrecio"></div>
-                    <div class="form-group"><label class="form-label">Stock</label><input type="number" class="form-input" id="insumoStock" value="0"></div>
-                </div>
-                <div class="form-group"><label class="form-label">Uso por Pizza</label><input type="number" class="form-input" id="insumoUsoPizza" step="0.01" value="0"></div>
-                <div class="form-group"><label class="form-label">Proveedor</label><input type="text" class="form-input" id="insumoProveedor"></div>
+</aside>
+
+<main class="mc sh" id="mainContent">
+    <section id="section-dashboard">
+        <div style="padding:24px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:12px">
+                <div><h2 class="fd" style="font-size:28px;color:white;margin-bottom:4px">Dashboard</h2><p style="color:#666">Resumen general de pedidos</p></div>
+                <button class="btn bp" onclick="openModal('modalPedido')" style="font-size:15px;padding:12px 24px">➕ Nuevo Pedido</button>
             </div>
-            <div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('modalInsumo')">Cancelar</button><button class="btn btn-primary" onclick="saveInsumo()">💾 Guardar</button></div>
-        </div>
-    </div>
-    <div class="modal-overlay" id="modalMarca">
-        <div class="modal">
-            <div class="modal-header"><h3 style="color: white; font-weight: 700;">🏷️ <span id="tituloMarca">Nueva Marca</span></h3><button onclick="closeModal('modalMarca')" style="background:none;border:none;color:#666;font-size:20px;cursor:pointer;">✕</button></div>
-            <div class="modal-body">
-                <input type="hidden" id="marcaId">
-                <div class="form-group"><label class="form-label">Nombre</label><input type="text" class="form-input" id="marcaNombre"></div>
-                <div class="form-group"><label class="form-label">Tipo Insumo</label><select class="form-select" id="marcaInsumoTipo"><option value="Masa">Masa</option><option value="Salsa">Salsa</option><option value="Queso">Queso</option><option value="Ingredientes">Ingredientes</option><option value="Otros">Otros</option></select></div>
-                <div class="form-group"><label class="form-label">Calidad (1-5)</label><div class="star-rating" id="marcaCalidad"><span class="star" onclick="setCalidad(1)">★</span><span class="star" onclick="setCalidad(2)">★</span><span class="star" onclick="setCalidad(3)">★</span><span class="star" onclick="setCalidad(4)">★</span><span class="star" onclick="setCalidad(5)">★</span></div><input type="hidden" id="marcaCalidadVal" value="3"></div>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-                    <div class="form-group"><label class="form-label">Precio</label><input type="number" class="form-input" id="marcaPrecio"></div>
-                    <div class="form-group"><label class="form-label">Proveedor</label><input type="text" class="form-input" id="marcaProveedor"></div>
-                </div>
-                <div class="form-group"><label class="form-label">Notas</label><textarea class="form-textarea" id="marcaNotas"></textarea></div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:24px">
+                <div class="ca kc o"><p style="font-size:12px;color:#666">Pedidos del Mes</p><p id="kpiPM" style="font-size:28px;font-weight:800;color:white">$0</p></div>
+                <div class="ca kc g"><p style="font-size:12px;color:#666">Ganancia Neta</p><p id="kpiGN" style="font-size:28px;font-weight:800;color:#22C55E">$0</p></div>
+                <div class="ca kc b"><p style="font-size:12px;color:#666">Clientes</p><p id="kpiCL" style="font-size:28px;font-weight:800;color:white">0</p></div>
+                <div class="ca kc y"><p style="font-size:12px;color:#666">Deudas</p><p id="kpiDE" style="font-size:28px;font-weight:800;color:#F59E0B">$0</p></div>
+                <div class="ca kc p"><p style="font-size:12px;color:#666">En Proceso</p><p id="kpiEP" style="font-size:28px;font-weight:800;color:#A855F7">0</p></div>
+                <div class="ca kc r"><p style="font-size:12px;color:#666">Pizzas</p><p id="kpiPZ" style="font-size:28px;font-weight:800;color:white">0</p></div>
             </div>
-            <div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('modalMarca')">Cancelar</button><button class="btn btn-primary" onclick="saveMarca()">💾 Guardar</button></div>
-        </div>
-    </div>
-    <div class="modal-overlay" id="modalPago">
-        <div class="modal">
-            <div class="modal-header"><h3 style="color: white; font-weight: 700;">💵 Registrar Pago</h3><button onclick="closeModal('modalPago')" style="background:none;border:none;color:#666;font-size:20px;cursor:pointer;">✕</button></div>
-            <div class="modal-body">
-                <div class="form-group"><label class="form-label">Pedido</label><select class="form-select" id="pagoPedido"></select></div>
-                <div class="form-group"><label class="form-label">Monto ($)</label><input type="number" class="form-input" id="pagoMonto"></div>
-                <div class="form-group"><label class="form-label">M&eacute;todo</label><select class="form-select" id="pagoMetodo"><option value="Efectivo">Efectivo</option><option value="Transferencia">Transferencia</option><option value="MercadoPago">Mercado Pago</option></select></div>
-                <div class="form-group"><label class="form-label">Fecha</label><input type="date" class="form-input" id="pagoFecha"></div>
+            <div style="display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:24px">
+                <div class="ca"><h3 style="color:white;margin-bottom:16px">📊 Ventas por Tipo</h3><div class="cc"><canvas id="cTipo"></canvas></div></div>
+                <div class="ca"><h3 style="color:white;margin-bottom:16px">🚚 Por Canal</h3><div class="cc"><canvas id="cCanal"></canvas></div></div>
             </div>
-            <div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('modalPago')">Cancelar</button><button class="btn btn-success" onclick="savePago()">💵 Registrar</button></div>
+            <div class="ca"><h3 style="color:white;margin-bottom:16px">📋 Últimos Pedidos</h3><div class="tc"><table><thead><tr><th>Fecha</th><th>Cliente</th><th>Productos</th><th>Total</th><th>Estado</th><th>Pago</th></tr></thead><tbody id="dPedidos"></tbody></table></div></div>
         </div>
+    </section>
+    <section id="section-pedidos" class="sh">
+        <div style="padding:24px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:12px"><h2 class="fd" style="font-size:28px;color:white">📋 Pedidos</h2><button class="btn bp" onclick="openModal('modalPedido')">➕ Nuevo Pedido</button></div>
+            <div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap">
+                <div class="si" style="flex:1"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg><input type="text" class="fi" placeholder="Buscar..." id="searchPedido" oninput="renderPedidos()"></div>
+                <select class="fs" id="filterPE" onchange="renderPedidos()" style="width:auto"><option value="">Todos</option><option value="Pendiente">Pendiente</option><option value="En proceso">En proceso</option><option value="Entregado">Entregado</option></select>
+                <select class="fs" id="filterPP" onchange="renderPedidos()" style="width:auto"><option value="">Todos</option><option value="Pagado">Pagado</option><option value="Pendiente">Pendiente</option></select>
+            </div>
+            <div class="ca"><div class="tc"><table><thead><tr><th>Fecha</th><th>Cliente</th><th>Productos</th><th>Total</th><th>Estado</th><th>Pago</th><th>Deuda</th><th>Acciones</th></tr></thead><tbody id="tPedidos"></tbody></table></div></div>
+        </div>
+    </section>
+    <section id="section-clientes" class="sh">
+        <div style="padding:24px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px"><h2 class="fd" style="font-size:28px;color:white">👥 Clientes</h2><button class="btn bp" onclick="openModal('modalCliente')">➕ Nuevo Cliente</button></div>
+            <div class="si" style="margin-bottom:16px"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg><input type="text" class="fi" placeholder="Buscar..." id="searchCliente" oninput="renderClientes()"></div>
+            <div class="ca"><div class="tc"><table><thead><tr><th>Nombre</th><th>Tipo</th><th>Tel&eacute;fono</th><th>Direcci&oacute;n</th><th>Compras</th><th>Deuda</th><th>Acciones</th></tr></thead><tbody id="tClientes"></tbody></table></div></div>
+        </div>
+    </section>
+    <section id="section-deudas" class="sh">
+        <div style="padding:24px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px"><h2 class="fd" style="font-size:28px;color:white">⏳ Deudas y Pagos</h2><button class="btn bp" onclick="openModal('modalPago')">💵 Registrar Pago</button></div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:24px">
+                <div class="ca kc y"><p style="font-size:12px;color:#666">Total Deudas</p><p id="kpiTD" style="font-size:28px;font-weight:800;color:#F59E0B">$0</p></div>
+                <div class="ca kc r"><p style="font-size:12px;color:#666">Vencidas</p><p id="kpiDV" style="font-size:28px;font-weight:800;color:#EF4444">$0</p></div>
+                <div class="ca kc g"><p style="font-size:12px;color:#666">Cobradas este Mes</p><p id="kpiCM" style="font-size:28px;font-weight:800;color:#22C55E">$0</p></div>
+            </div>
+            <div class="ca"><h3 style="color:white;margin-bottom:16px">📋 Deudas Pendientes</h3><div class="tc"><table><thead><tr><th>Cliente</th><th>Pedido</th><th>Total</th><th>Pagado</th><th>Restante</th><th>Fecha</th><th>Estado</th><th>Acciones</th></tr></thead><tbody id="tDeudas"></tbody></table></div></div>
+            <div class="ca" style="margin-top:16px"><h3 style="color:white;margin-bottom:16px">📋 Pagos</h3><div class="tc"><table><thead><tr><th>Fecha</th><th>Cliente</th><th>Monto</th><th>M&eacute;todo</th><th>Acciones</th></tr></thead><tbody id="tPagos"></tbody></table></div></div>
+        </div>
+    </section>
+    <section id="section-insumos" class="sh">
+        <div style="padding:24px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px"><h2 class="fd" style="font-size:28px;color:white">📦 Insumos</h2><button class="btn bp" onclick="openModal('modalInsumo')">➕ Nuevo Insumo</button></div>
+            <div class="ca" style="margin-bottom:24px"><h3 style="color:white;margin-bottom:16px">💰 Costo por Pizza</h3><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:16px" id="costoPizza"></div></div>
+            <div class="ca"><div class="tc"><table><thead><tr><th>Nombre</th><th>Marca</th><th>Unidad</th><th>Precio</th><th>Stock</th><th>Uso/Pizza</th><th>Costo</th><th>Acciones</th></tr></thead><tbody id="tInsumos"></tbody></table></div></div>
+        </div>
+    </section>
+    <section id="section-marcas" class="sh">
+        <div style="padding:24px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px"><h2 class="fd" style="font-size:28px;color:white">🏷️ Marcas</h2><button class="btn bp" onclick="openModal('modalMarca')">➕ Nueva Marca</button></div>
+            <div class="ca"><div class="tc"><table><thead><tr><th>Marca</th><th>Insumo</th><th>Calidad</th><th>Precio</th><th>Proveedor</th><th>Notas</th><th>Acciones</th></tr></thead><tbody id="tMarcas"></tbody></table></div></div>
+        </div>
+    </section>
+    <section id="section-reportes" class="sh">
+        <div style="padding:24px">
+            <h2 class="fd" style="font-size:28px;color:white;margin-bottom:24px">📊 Reportes</h2>
+            <div style="display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap">
+                <button class="tb a" onclick="showRT('mensuales',this)">📈 Mensuales</button>
+                <button class="tb" onclick="showRT('rentabilidad',this)">💰 Rentabilidad</button>
+                <button class="tb" onclick="showRT('clientesTop',this)">👑 Clientes</button>
+                <button class="tb" onclick="showRT('productos',this)">🍕 Productos</button>
+            </div>
+            <div id="r-mensuales" class="ca"><h3 style="color:white;margin-bottom:16px">Pedidos Mensuales</h3><div class="cc"><canvas id="cMensual"></canvas></div></div>
+            <div id="r-rentabilidad" class="ca sh"><h3 style="color:white;margin-bottom:16px">Rentabilidad</h3><div id="rentCont"></div></div>
+            <div id="r-clientesTop" class="ca sh"><h3 style="color:white;margin-bottom:16px">Mejores Clientes</h3><div class="cc"><canvas id="cCliTop"></canvas></div></div>
+            <div id="r-productos" class="ca sh"><h3 style="color:white;margin-bottom:16px">Por Producto</h3><div class="cc"><canvas id="cProd"></canvas></div></div>
+        </div>
+    </section>
+    <section id="section-guia" class="sh">
+        <div style="padding:24px">
+            <h2 class="fd" style="font-size:28px;color:white;margin-bottom:24px">💡 Gu&iacute;a</h2>
+            <div class="tk"><h4>📋 Estados</h4><ul><li><strong style="color:white">Pendiente:</strong> Recibido.</li><li><strong style="color:white">En proceso:</strong> Preparando.</li><li><strong style="color:white">Entregado:</strong> Entregado.</li></ul></div>
+            <div class="wt"><strong>Plantilla:</strong><br>"¡Hola! Soy de Metele 🍕<br>• [Tipo] x[Cantidad] = $[Total]<br>• Entrega: [Fecha]<br>¿Confirmás?"</div>
+            <div class="tk"><h4>💰 Financiero</h4><ul><li><strong style="color:white">Registro diario</strong> de cada pedido.</li><li><strong style="color:white">Separa cajas:</strong> insumos vs ganancias.</li></ul></div>
+            <div class="tk" style="border-color:#EF4444;background:linear-gradient(135deg,rgba(239,68,68,.1),rgba(239,68,68,.05))">
+                <h4 style="color:#EF4444">⚠️ Ejecutar en Supabase SQL Editor (una vez):</h4>
+                <pre style="background:#0a0a1a;padding:16px;border-radius:8px;font-size:12px;color:#4ADE80;cursor:pointer" onclick="copySQL()">ALTER TABLE pedidos ADD COLUMN IF NOT EXISTS items TEXT;</pre>
+                <p style="color:#666;font-size:12px;margin-top:8px">Clic para copiar</p>
+            </div>
+        </div>
+    </section>
+</main>
+
+<!-- MODALES -->
+<div class="mo" id="modalPedido">
+    <div class="md">
+        <div class="mh"><h3 style="color:white;font-weight:700">📋 Nuevo Pedido</h3><button onclick="closeModal('modalPedido')" style="background:none;border:none;color:#666;font-size:20px;cursor:pointer">✕</button></div>
+        <div class="mb">
+            <div class="fg"><label class="fl">Cliente</label><select class="fs" id="pCliente"><option value="">Seleccionar...</option></select></div>
+            <div style="margin-bottom:12px">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><label class="fl" style="margin-bottom:0">Productos</label><button class="btn bsm bs" onclick="addPItem()">+ Agregar</button></div>
+                <div id="pItems"></div>
+            </div>
+            <div style="background:#0f0f0f;padding:12px 16px;border-radius:10px;display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;border:1px solid #2a2a4a">
+                <span style="font-size:14px;color:#a0a0c0">Total:</span>
+                <span id="pTotalD" style="font-size:24px;font-weight:800;color:#FF6B35">$0</span>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+                <div class="fg"><label class="fl">Canal</label><select class="fs" id="pCanal"><option value="Almac&eacute;n">Almac&eacute;n</option><option value="Cliente Final">Cliente Final</option></select></div>
+                <div class="fg"><label class="fl">Estado</label><select class="fs" id="pEstado"><option value="Pendiente">Pendiente</option><option value="En proceso">En proceso</option><option value="Entregado">Entregado</option></select></div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+                <div class="fg"><label class="fl">Pago</label><select class="fs" id="pPago" onchange="toggleFP()"><option value="Pagado">Pagado</option><option value="Pendiente">Pendiente</option></select></div>
+                <div class="fg"><label class="fl">Fecha</label><input type="date" class="fi" id="pFecha"></div>
+            </div>
+            <div id="fpCont" class="fg sh"><label class="fl">Fecha Estimada de Pago</label><input type="date" class="fi" id="pFPago"></div>
+            <div class="fg"><label class="fl">Notas</label><textarea class="ft" id="pNotas" rows="2"></textarea></div>
+        </div>
+        <div class="mf"><button class="btn bs" onclick="closeModal('modalPedido')">Cancelar</button><button class="btn bp" onclick="savePedido()">💾 Guardar</button></div>
     </div>
+</div>
 
-    <script>
-    (function() {
+<div class="mo" id="modalCliente">
+    <div class="md">
+        <div class="mh"><h3 style="color:white;font-weight:700">👥 <span id="tCliente">Nuevo Cliente</span></h3><button onclick="closeModal('modalCliente')" style="background:none;border:none;color:#666;font-size:20px;cursor:pointer">✕</button></div>
+        <div class="mb">
+            <input type="hidden" id="cId">
+            <div class="fg"><label class="fl">Nombre</label><input type="text" class="fi" id="cNombre"></div>
+            <div class="fg"><label class="fl">Tipo</label><select class="fs" id="cTipo"><option value="Almac&eacute;n">Almac&eacute;n</option><option value="Cliente Final">Cliente Final</option></select></div>
+            <div class="fg"><label class="fl">Tel&eacute;fono</label><input type="text" class="fi" id="cTel"></div>
+            <div class="fg"><label class="fl">Direcci&oacute;n</label><input type="text" class="fi" id="cDir"></div>
+            <div class="fg"><label class="fl">Notas</label><textarea class="ft" id="cNotas"></textarea></div>
+        </div>
+        <div class="mf"><button class="btn bs" onclick="closeModal('modalCliente')">Cancelar</button><button class="btn bp" onclick="saveCliente()">💾 Guardar</button></div>
+    </div>
+</div>
 
-        window.togglePass = function() {
-            var inp = document.getElementById('loginPass');
-            var eye = document.getElementById('eyeIcon');
-            var eyeOff = document.getElementById('eyeOffIcon');
-            if (inp.type === 'password') {
-                inp.type = 'text';
-                eye.classList.add('section-hidden');
-                eyeOff.classList.remove('section-hidden');
-            } else {
-                inp.type = 'password';
-                eye.classList.remove('section-hidden');
-                eyeOff.classList.add('section-hidden');
-            }
-        };
+<div class="mo" id="modalInsumo">
+    <div class="md">
+        <div class="mh"><h3 style="color:white;font-weight:700">📦 <span id="tInsumo">Nuevo Insumo</span></h3><button onclick="closeModal('modalInsumo')" style="background:none;border:none;color:#666;font-size:20px;cursor:pointer">✕</button></div>
+        <div class="mb">
+            <input type="hidden" id="iId">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+                <div class="fg"><label class="fl">Nombre</label><input type="text" class="fi" id="iNombre"></div>
+                <div class="fg"><label class="fl">Marca</label><input type="text" class="fi" id="iMarca"></div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+                <div class="fg"><label class="fl">Unidad</label><select class="fs" id="iUnidad"><option value="kg">kg</option><option value="lt">lt</option><option value="unidad">unidad</option></select></div>
+                <div class="fg"><label class="fl">Precio</label><input type="number" class="fi" id="iPrecio"></div>
+                <div class="fg"><label class="fl">Stock</label><input type="number" class="fi" id="iStock" value="0"></div>
+            </div>
+            <div class="fg"><label class="fl">Uso por Pizza</label><input type="number" class="fi" id="iUso" step="0.01" value="0"></div>
+            <div class="fg"><label class="fl">Proveedor</label><input type="text" class="fi" id="iProv"></div>
+        </div>
+        <div class="mf"><button class="btn bs" onclick="closeModal('modalInsumo')">Cancelar</button><button class="btn bp" onclick="saveInsumo()">💾 Guardar</button></div>
+    </div>
+</div>
 
-        window.doLogin = function() {
-            var u = document.getElementById('loginUser').value.trim();
-            var p = document.getElementById('loginPass').value;
-            if (u === 'metele' && p === 'Rosas216') {
-                document.getElementById('loginScreen').classList.add('hidden');
-                document.getElementById('sidebar').classList.remove('section-hidden');
-                document.getElementById('mainContent').classList.remove('section-hidden');
-                document.getElementById('loginError').style.display = 'none';
-                updateDashboard();
-            } else {
-                document.getElementById('loginError').style.display = 'block';
-                document.getElementById('loginPass').value = '';
-                document.getElementById('loginPass').focus();
-            }
-        };
+<div class="mo" id="modalMarca">
+    <div class="md">
+        <div class="mh"><h3 style="color:white;font-weight:700">🏷️ <span id="tMarca">Nueva Marca</span></h3><button onclick="closeModal('modalMarca')" style="background:none;border:none;color:#666;font-size:20px;cursor:pointer">✕</button></div>
+        <div class="mb">
+            <input type="hidden" id="mId">
+            <div class="fg"><label class="fl">Nombre</label><input type="text" class="fi" id="mNombre"></div>
+            <div class="fg"><label class="fl">Tipo</label><select class="fs" id="mTipo"><option value="Masa">Masa</option><option value="Salsa">Salsa</option><option value="Queso">Queso</option><option value="Ingredientes">Ingredientes</option><option value="Otros">Otros</option></select></div>
+            <div class="fg"><label class="fl">Calidad</label><div class="sr" id="mCalidad"><span class="st" onclick="setCal(1)">★</span><span class="st" onclick="setCal(2)">★</span><span class="st" onclick="setCal(3)">★</span><span class="st" onclick="setCal(4)">★</span><span class="st" onclick="setCal(5)">★</span></div><input type="hidden" id="mCalVal" value="3"></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+                <div class="fg"><label class="fl">Precio</label><input type="number" class="fi" id="mPrecio"></div>
+                <div class="fg"><label class="fl">Proveedor</label><input type="text" class="fi" id="mProv"></div>
+            </div>
+            <div class="fg"><label class="fl">Notas</label><textarea class="ft" id="mNotas"></textarea></div>
+        </div>
+        <div class="mf"><button class="btn bs" onclick="closeModal('modalMarca')">Cancelar</button><button class="btn bp" onclick="saveMarca()">💾 Guardar</button></div>
+    </div>
+</div>
 
-        window.doLogout = function() {
-            if (confirm('¿Cerrar sesi&oacute;n?')) {
-                document.getElementById('loginScreen').classList.remove('hidden');
-                document.getElementById('sidebar').classList.add('section-hidden');
-                document.getElementById('mainContent').classList.add('section-hidden');
-                document.getElementById('loginUser').value = '';
-                document.getElementById('loginPass').value = '';
-                document.getElementById('loginError').style.display = 'none';
-                document.getElementById('loginPass').type = 'password';
-                document.getElementById('eyeIcon').classList.remove('section-hidden');
-                document.getElementById('eyeOffIcon').classList.add('section-hidden');
-            }
-        };
+<div class="mo" id="modalPago">
+    <div class="md">
+        <div class="mh"><h3 style="color:white;font-weight:700">💵 Registrar Pago</h3><button onclick="closeModal('modalPago')" style="background:none;border:none;color:#666;font-size:20px;cursor:pointer">✕</button></div>
+        <div class="mb">
+            <div class="fg"><label class="fl">Pedido</label><select class="fs" id="pagPedido"></select></div>
+            <div class="fg"><label class="fl">Monto</label><input type="number" class="fi" id="pagMonto"></div>
+            <div class="fg"><label class="fl">M&eacute;todo</label><select class="fs" id="pagMetodo"><option value="Efectivo">Efectivo</option><option value="Transferencia">Transferencia</option><option value="MercadoPago">Mercado Pago</option></select></div>
+            <div class="fg"><label class="fl">Fecha</label><input type="date" class="fi" id="pagFecha"></div>
+        </div>
+        <div class="mf"><button class="btn bs" onclick="closeModal('modalPago')">Cancelar</button><button class="btn bg" onclick="savePago()">💵 Registrar</button></div>
+    </div>
+</div>
 
-        document.getElementById('loginUser').addEventListener('keydown', function(e) { if (e.key === 'Enter') window.doLogin(); });
-        document.getElementById('loginPass').addEventListener('keydown', function(e) { if (e.key === 'Enter') window.doLogin(); });
+<script>
+// ============================================================
+// TODAS LAS FUNCIONES GLOBALES (accesibles desde onclick en HTML)
+// ============================================================
 
-        var SB_URL = 'https://zundvvavprjvqupynryg.supabase.co';
-        var SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp1bmR2dmF2cHJqdnF1cHlucnlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg0NTE2MDUsImV4cCI6MjA5NDAyNzYwNX0.0w7mYaBw2bgDLTjZJjYn8Fo_gvks_nGcuMNj5L8lpfM';
-        var sb = supabase.createClient(SB_URL, SB_KEY);
+var SB_URL = 'https://zundvvavprjvqupynryg.supabase.co';
+var SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp1bmR2dmF2cHJqdnF1cHlucnlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg0NTE2MDUsImV4cCI6MjA5NDAyNzYwNX0.0w7mYaBw2bgDLTjZJjYn8Fo_gvks_nGcuMNj5L8lpfM';
+var sb = supabase.createClient(SB_URL, SB_KEY);
+var itemCounter = 0;
+var chart1 = null, chart2 = null, chart3 = null, chart4 = null, chart5 = null;
 
-        function notify(msg, type) {
-            type = type || 'success';
-            var n = document.getElementById('notification');
-            var prefix = type === 'success' ? '✅ ' : type === 'error' ? '❌ ' : 'ℹ️ ';
-            n.textContent = prefix + msg;
-            n.className = 'notification ' + type + ' show';
-            setTimeout(function() { n.classList.remove('show'); }, 3000);
-        }
+function notify(msg, type) {
+    type = type || 'success';
+    var n = document.getElementById('notification');
+    var prefix = type === 'success' ? '✅ ' : type === 'error' ? '❌ ' : 'ℹ️ ';
+    n.textContent = prefix + msg;
+    n.className = 'nt ' + (type === 'success' ? 'ok' : type === 'error' ? 'er' : 'inf') + ' s';
+    setTimeout(function() { n.classList.remove('s'); }, 3000);
+}
 
-        function genId() {
-            if (window.crypto && window.crypto.randomUUID) return window.crypto.randomUUID();
-            return Date.now().toString(36) + Math.random().toString(36).slice(2);
-        }
+function genId() {
+    if (window.crypto && window.crypto.randomUUID) return window.crypto.randomUUID();
+    return Date.now().toString(36) + Math.random().toString(36).slice(2);
+}
 
-        function fmt(d) {
-            if (!d) return '-';
-            var p = d.split('-');
-            return p[2] + '/' + p[1] + '/' + p[0];
-        }
+function fmt(d) {
+    if (!d) return '-';
+    var p = d.split('-');
+    return p[2] + '/' + p[1] + '/' + p[0];
+}
 
-        function getTotalItems(items) {
-            var total = 0;
-            for (var i = 0; i < items.length; i++) total += items[i].cantidad;
-            return total;
-        }
+function togglePass() {
+    var inp = document.getElementById('loginPass');
+    var eye = document.getElementById('eyeI');
+    var eyeOff = document.getElementById('eyeO');
+    if (inp.type === 'password') {
+        inp.type = 'text';
+        eye.classList.add('sh');
+        eyeOff.classList.remove('sh');
+    } else {
+        inp.type = 'password';
+        eye.classList.remove('sh');
+        eyeOff.classList.add('sh');
+    }
+}
 
-        function normalize(row) {
-            var o = {};
-            for (var k in row) {
-                if (k === 'created_at') continue;
-                if (k === 'cliente_id') { o.clienteId = row[k]; continue; }
-                if (k === 'pedido_id') { o.pedidoId = row[k]; continue; }
-                if (k === 'precio_unitario') { o.precioUnitario = parseFloat(row[k]); continue; }
-                if (k === 'fecha_pago_estimado') { o.fechaPagoEstimado = row[k]; continue; }
-                if (k === 'uso_por_pizza') { o.usoPorPizza = parseFloat(row[k]); continue; }
-                if (k === 'insumo_tipo') { o.insumoTipo = row[k]; continue; }
-                if (k === 'items') {
-                    if (typeof row[k] === 'string') {
-                        try { o.items = JSON.parse(row[k]); } catch(e) { o.items = []; }
-                    } else if (Array.isArray(row[k])) {
-                        o.items = row[k];
-                    } else {
-                        o.items = [];
-                    }
-                    continue;
-                }
-                o[k] = row[k];
-            }
-            var nums = ['precioUnitario', 'total', 'monto', 'precio', 'stock', 'usoPorPizza', 'calidad'];
-            for (var i = 0; i < nums.length; i++) {
-                if (o[nums[i]] !== undefined && o[nums[i]] !== null) o[nums[i]] = parseFloat(o[nums[i]]);
-            }
-            if (!o.items) o.items = [];
-            if (o.tipo && !o.items.length) {
-                o.items = [{ tipo: o.tipo, cantidad: o.cantidad || 1, precioUnitario: o.precioUnitario || 0, subtotal: (o.cantidad || 1) * (o.precioUnitario || 0) }];
-            }
-            return o;
-        }
+function doLogin() {
+    var u = document.getElementById('loginUser').value.trim();
+    var p = document.getElementById('loginPass').value;
+    if (u === 'metele' && p === 'Rosas216') {
+        document.getElementById('ls').classList.add('h');
+        document.getElementById('sidebar').classList.remove('sh');
+        document.getElementById('mainContent').classList.remove('sh');
+        document.getElementById('loginError').style.display = 'none';
+        updateDashboard();
+    } else {
+        document.getElementById('loginError').style.display = 'block';
+        document.getElementById('loginPass').value = '';
+        document.getElementById('loginPass').focus();
+    }
+}
 
-        function toSnake(d) {
-            var o = {};
-            for (var k in d) {
-                var snake = k.replace(/[A-Z]/g, function(m) { return '_' + m.toLowerCase(); });
-                if (k === 'items') o[snake] = JSON.stringify(d[k]);
-                else o[snake] = d[k];
-            }
-            return o;
-        }
+function doLogout() {
+    if (confirm('¿Cerrar sesión?')) {
+        document.getElementById('ls').classList.remove('h');
+        document.getElementById('sidebar').classList.add('sh');
+        document.getElementById('mainContent').classList.add('sh');
+        document.getElementById('loginUser').value = '';
+        document.getElementById('loginPass').value = '';
+        document.getElementById('loginError').style.display = 'none';
+        document.getElementById('loginPass').type = 'password';
+        document.getElementById('eyeI').classList.remove('sh');
+        document.getElementById('eyeO').classList.add('sh');
+    }
+}
 
-        async function dbGet(table) {
-            var result = await sb.from(table).select('*');
-            if (result.error) return [];
-            var items = [];
-            for (var i = 0; i < result.data.length; i++) items.push(normalize(result.data[i]));
-            return items;
-        }
+function showSection(s) {
+    var sections = document.querySelectorAll('main > section');
+    for (var i = 0; i < sections.length; i++) sections[i].classList.add('sh');
+    document.getElementById('section-' + s).classList.remove('sh');
+    var navItems = document.querySelectorAll('.ni');
+    for (var i = 0; i < navItems.length; i++) {
+        navItems[i].classList.toggle('a', navItems[i].getAttribute('data-section') === s);
+    }
+    document.getElementById('sidebar').classList.remove('op');
+    if (s === 'dashboard') updateDashboard();
+    if (s === 'pedidos') renderPedidos();
+    if (s === 'clientes') renderClientes();
+    if (s === 'deudas') renderDeudas();
+    if (s === 'insumos') renderInsumos();
+    if (s === 'marcas') renderMarcas();
+    if (s === 'reportes') renderReportes();
+}
 
-        async function dbInsert(table, d) {
-            var result = await sb.from(table).insert(toSnake(d));
-            if (result.error) { notify('Error: ' + result.error.message, 'error'); return false; }
-            return true;
-        }
+function openModal(id) {
+    document.getElementById(id).classList.add('a');
+    if (id === 'modalPedido') {
+        document.getElementById('pFecha').value = new Date().toISOString().split('T')[0];
+        populateClientes();
+        resetPItems();
+    }
+    if (id === 'modalPago') {
+        document.getElementById('pagFecha').value = new Date().toISOString().split('T')[0];
+        populatePedidosParaPago();
+    }
+}
 
-        async function dbUpdate(table, id, d) {
-            var result = await sb.from(table).update(toSnake(d)).eq('id', id);
-            if (result.error) { notify('Error: ' + result.error.message, 'error'); return false; }
-            return true;
-        }
+function closeModal(id) { document.getElementById(id).classList.remove('a'); }
 
-        async function dbDelete(table, id) {
-            var result = await sb.from(table).delete().eq('id', id);
-            if (result.error) { notify('Error: ' + result.error.message, 'error'); return false; }
-            return true;
-        }
+async function populateClientes() {
+    var clientes = await dbGet('clientes');
+    var sel = document.getElementById('pCliente');
+    var html = '<option value="">Seleccionar...</option>';
+    for (var i = 0; i < clientes.length; i++) {
+        html += '<option value="' + clientes[i].id + '">' + clientes[i].nombre + ' (' + clientes[i].tipo + ')</option>';
+    }
+    sel.innerHTML = html;
+}
 
-        async function deletePedidoWithPagos(pedidoId) {
-            var pagos = await dbGet('pagos');
-            for (var i = 0; i < pagos.length; i++) {
-                if (pagos[i].pedidoId === pedidoId) await dbDelete('pagos', pagos[i].id);
-            }
-            return await dbDelete('pedidos', pedidoId);
-        }
-
-        function getStatusBadge(estado) {
-            var map = { 'Pendiente': 'badge-pendiente', 'En proceso': 'badge-proceso', 'Entregado': 'badge-entregado' };
-            return map[estado] || 'badge-pendiente';
-        }
-
-        function getDeudaRestante(pedidoId, pedidos, pagos) {
-            var pedido = null;
-            for (var i = 0; i < pedidos.length; i++) { if (pedidos[i].id === pedidoId) { pedido = pedidos[i]; break; } }
-            if (!pedido) return 0;
+async function populatePedidosParaPago() {
+    var pedidos = await dbGet('pedidos');
+    var pagos = await dbGet('pagos');
+    var sel = document.getElementById('pagPedido');
+    var html = '<option value="">Seleccionar...</option>';
+    for (var i = 0; i < pedidos.length; i++) {
+        if (pedidos[i].estadoPago !== 'Pagado') {
             var pagado = 0;
-            for (var i = 0; i < pagos.length; i++) { if (pagos[i].pedidoId === pedidoId) pagado += pagos[i].monto; }
-            return Math.max(0, pedido.total - pagado);
+            for (var j = 0; j < pagos.length; j++) { if (pagos[j].pedidoId === pedidos[i].id) pagado += pagos[j].monto; }
+            var restante = pedidos[i].total - pagado;
+            var desc = '';
+            for (var j = 0; j < pedidos[i].items.length; j++) { desc += pedidos[i].items[j].tipo + ' x' + pedidos[i].items[j].cantidad + ' '; }
+            html += '<option value="' + pedidos[i].id + '">' + desc.trim() + ' - Rest: $' + restante.toLocaleString() + '</option>';
         }
+    }
+    sel.innerHTML = html;
+}
 
-        function calcDeudaCliente(cid, pedidos, pagos) {
-            var totalPedidos = 0;
-            for (var i = 0; i < pedidos.length; i++) { if (pedidos[i].clienteId === cid) totalPedidos += pedidos[i].total; }
-            var totalPagos = 0;
-            for (var i = 0; i < pagos.length; i++) {
-                var ped = null;
-                for (var j = 0; j < pedidos.length; j++) { if (pedidos[j].id === pagos[i].pedidoId) { ped = pedidos[j]; break; } }
-                if (ped && ped.clienteId === cid) totalPagos += pagos[i].monto;
-            }
-            return Math.max(0, totalPedidos - totalPagos);
+function resetPItems() {
+    document.getElementById('pItems').innerHTML = '';
+    itemCounter = 0;
+    addPItem();
+}
+
+function addPItem() {
+    itemCounter++;
+    var id = itemCounter;
+    var container = document.getElementById('pItems');
+    var row = document.createElement('div');
+    row.className = 'ir';
+    row.id = 'item-row-' + id;
+    row.innerHTML = '<div><label>Tipo</label><select class="fs" id="itTipo_' + id + '" onchange="calcIS(' + id + ')"><option value="">...</option><option value="Muzzarella">Muzzarella</option><option value="Especial">Especial</option></select></div><div><label>Cant</label><input type="number" class="fi" id="itCant_' + id + '" min="1" value="1" oninput="calcIS(' + id + ')"></div><div><label>Precio</label><input type="number" class="fi" id="itPrecio_' + id + '" oninput="calcIS(' + id + ')"></div><div><label>Subtotal</label><div class="is2" id="itSub_' + id + '">$0</div></div><div><button class="ri" onclick="removePItem(' + id + ')">✕</button></div>';
+    container.appendChild(row);
+    calcPTotal();
+}
+
+function removePItem(id) {
+    var row = document.getElementById('item-row-' + id);
+    if (row) row.remove();
+    calcPTotal();
+}
+
+function calcIS(id) {
+    var tipo = document.getElementById('itTipo_' + id).value;
+    var precioInput = document.getElementById('itPrecio_' + id);
+    if (tipo === 'Muzzarella' && !precioInput.value) precioInput.value = 5000;
+    if (tipo === 'Especial' && !precioInput.value) precioInput.value = 7000;
+    var cant = parseInt(document.getElementById('itCant_' + id).value) || 0;
+    var precio = parseFloat(precioInput.value) || 0;
+    document.getElementById('itSub_' + id).textContent = '$' + (cant * precio).toLocaleString();
+    calcPTotal();
+}
+
+function calcPTotal() {
+    var total = 0;
+    var rows = document.querySelectorAll('#pItems .ir');
+    for (var i = 0; i < rows.length; i++) {
+        var id = rows[i].id.replace('item-row-', '');
+        var cant = parseInt(document.getElementById('itCant_' + id).value) || 0;
+        var precio = parseFloat(document.getElementById('itPrecio_' + id).value) || 0;
+        total += cant * precio;
+    }
+    document.getElementById('pTotalD').textContent = '$' + total.toLocaleString();
+}
+
+function getPItemsData() {
+    var items = [];
+    var rows = document.querySelectorAll('#pItems .ir');
+    for (var i = 0; i < rows.length; i++) {
+        var id = rows[i].id.replace('item-row-', '');
+        var tipo = document.getElementById('itTipo_' + id).value;
+        var cant = parseInt(document.getElementById('itCant_' + id).value) || 0;
+        var precio = parseFloat(document.getElementById('itPrecio_' + id).value) || 0;
+        if (tipo && cant > 0) {
+            items.push({ tipo: tipo, cantidad: cant, precioUnitario: precio, subtotal: cant * precio });
         }
+    }
+    return items;
+}
 
-        function getItemsSummary(items) {
-            if (!items || items.length === 0) return '';
-            var html = '';
-            for (var i = 0; i < items.length; i++) {
-                html += '<span class="badge-item">' + items[i].tipo + ' x' + items[i].cantidad + '</span>';
-            }
-            return html;
+function toggleFP() {
+    var estado = document.getElementById('pPago').value;
+    var c = document.getElementById('fpCont');
+    if (estado === 'Pendiente') {
+        c.classList.remove('sh');
+        var nw = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+        document.getElementById('pFPago').value = nw.toISOString().split('T')[0];
+    } else { c.classList.add('sh'); }
+}
+
+function getStatusBadge(estado) {
+    var map = { 'Pendiente': 'badge-pn', 'En proceso': 'badge-pr', 'Entregado': 'badge-e' };
+    return map[estado] || 'badge-pn';
+}
+
+function getItemsSummary(items) {
+    if (!items || items.length === 0) return '';
+    var html = '';
+    for (var i = 0; i < items.length; i++) {
+        html += '<span class="bi">' + items[i].tipo + ' x' + items[i].cantidad + '</span>';
+    }
+    return html;
+}
+
+function getTotalItems(items) {
+    var total = 0;
+    for (var i = 0; i < items.length; i++) total += items[i].cantidad;
+    return total;
+}
+
+function getDeudaRestante(pedidoId, pedidos, pagos) {
+    var pedido = null;
+    for (var i = 0; i < pedidos.length; i++) { if (pedidos[i].id === pedidoId) { pedido = pedidos[i]; break; } }
+    if (!pedido) return 0;
+    var pagado = 0;
+    for (var i = 0; i < pagos.length; i++) { if (pagos[i].pedidoId === pedidoId) pagado += pagos[i].monto; }
+    return Math.max(0, pedido.total - pagado);
+}
+
+function calcDeudaCliente(cid, pedidos, pagos) {
+    var tv = 0;
+    for (var i = 0; i < pedidos.length; i++) { if (pedidos[i].clienteId === cid) tv += pedidos[i].total; }
+    var tp = 0;
+    for (var i = 0; i < pagos.length; i++) {
+        var ped = null;
+        for (var j = 0; j < pedidos.length; j++) { if (pedidos[j].id === pagos[i].pedidoId) { ped = pedidos[j]; break; } }
+        if (ped && ped.clienteId === cid) tp += pagos[i].monto;
+    }
+    return Math.max(0, tv - tp);
+}
+
+// ============================================================
+// DB FUNCTIONS
+// ============================================================
+function normalize(row) {
+    var o = {};
+    for (var k in row) {
+        if (k === 'created_at') continue;
+        if (k === 'cliente_id') { o.clienteId = row[k]; continue; }
+        if (k === 'pedido_id') { o.pedidoId = row[k]; continue; }
+        if (k === 'precio_unitario') { o.precioUnitario = parseFloat(row[k]); continue; }
+        if (k === 'fecha_pago_estimado') { o.fechaPagoEstimado = row[k]; continue; }
+        if (k === 'uso_por_pizza') { o.usoPorPizza = parseFloat(row[k]); continue; }
+        if (k === 'insumo_tipo') { o.insumoTipo = row[k]; continue; }
+        if (k === 'items') {
+            if (typeof row[k] === 'string') { try { o.items = JSON.parse(row[k]); } catch(e) { o.items = []; } }
+            else if (Array.isArray(row[k])) { o.items = row[k]; }
+            else { o.items = []; }
+            continue;
         }
+        o[k] = row[k];
+    }
+    var nums = ['precioUnitario', 'total', 'monto', 'precio', 'stock', 'usoPorPizza', 'calidad'];
+    for (var i = 0; i < nums.length; i++) {
+        if (o[nums[i]] !== undefined && o[nums[i]] !== null) o[nums[i]] = parseFloat(o[nums[i]]);
+    }
+    if (!o.items) o.items = [];
+    if (o.tipo && !o.items.length) {
+        o.items = [{ tipo: o.tipo, cantidad: o.cantidad || 1, precioUnitario: o.precioUnitario || 0, subtotal: (o.cantidad || 1) * (o.precioUnitario || 0) }];
+    }
+    return o;
+}
 
-        window.showSection = function(s) {
-            var sections = document.querySelectorAll('main > section');
-            for (var i = 0; i < sections.length; i++) sections[i].classList.add('section-hidden');
-            document.getElementById('section-' + s).classList.remove('section-hidden');
-            var navItems = document.querySelectorAll('.nav-item');
-            for (var i = 0; i < navItems.length; i++) {
-                navItems[i].classList.toggle('active', navItems[i].getAttribute('data-section') === s);
-            }
-            document.getElementById('sidebar').classList.remove('open');
-            if (s === 'dashboard') updateDashboard();
-            if (s === 'pedidos') renderPedidos();
-            if (s === 'clientes') renderClientes();
-            if (s === 'deudas') renderDeudas();
-            if (s === 'insumos') renderInsumos();
-            if (s === 'marcas') renderMarcas();
-            if (s === 'reportes') renderReportes();
-        };
+function toSnake(d) {
+    var o = {};
+    for (var k in d) {
+        var snake = k.replace(/[A-Z]/g, function(m) { return '_' + m.toLowerCase(); });
+        if (k === 'items') o[snake] = JSON.stringify(d[k]);
+        else o[snake] = d[k];
+    }
+    return o;
+}
 
-        window.openModal = function(id) {
-            document.getElementById(id).classList.add('active');
-            if (id === 'modalPedido') {
-                document.getElementById('pedidoFecha').value = new Date().toISOString().split('T')[0];
-                populateClientes();
-                resetPedidoItems();
-            }
-            if (id === 'modalPago') {
-                document.getElementById('pagoFecha').value = new Date().toISOString().split('T')[0];
-                populatePedidosParaPago();
-            }
-        };
+async function dbGet(table) {
+    var result = await sb.from(table).select('*');
+    if (result.error) return [];
+    var items = [];
+    for (var i = 0; i < result.data.length; i++) items.push(normalize(result.data[i]));
+    return items;
+}
 
-        window.closeModal = function(id) { document.getElementById(id).classList.remove('active'); };
+async function dbInsert(table, d) {
+    var result = await sb.from(table).insert(toSnake(d));
+    if (result.error) { notify('Error: ' + result.error.message, 'error'); return false; }
+    return true;
+}
 
-        async function populateClientes() {
-            var clientes = await dbGet('clientes');
-            var sel = document.getElementById('pedidoCliente');
-            var html = '<option value="">Seleccionar...</option>';
-            for (var i = 0; i < clientes.length; i++) {
-                html += '<option value="' + clientes[i].id + '">' + clientes[i].nombre + ' (' + clientes[i].tipo + ')</option>';
-            }
-            sel.innerHTML = html;
+async function dbUpdate(table, id, d) {
+    var result = await sb.from(table).update(toSnake(d)).eq('id', id);
+    if (result.error) { notify('Error: ' + result.error.message, 'error'); return false; }
+    return true;
+}
+
+async function dbDelete(table, id) {
+    var result = await sb.from(table).delete().eq('id', id);
+    if (result.error) { notify('Error: ' + result.error.message, 'error'); return false; }
+    return true;
+}
+
+async function deletePedidoWithPagos(pedidoId) {
+    var pagos = await dbGet('pagos');
+    for (var i = 0; i < pagos.length; i++) {
+        if (pagos[i].pedidoId === pedidoId) await dbDelete('pagos', pagos[i].id);
+    }
+    return await dbDelete('pedidos', pedidoId);
+}
+
+// ============================================================
+// PEDIDOS
+// ============================================================
+async function renderPedidos() {
+    var pedidos = await dbGet('pedidos');
+    var clientes = await dbGet('clientes');
+    var pagos = await dbGet('pagos');
+    var search = (document.getElementById('searchPedido') || {}).value || '';
+    search = search.toLowerCase();
+    var filterEstado = document.getElementById('filterPE').value;
+    var filterPago = document.getElementById('filterPP').value;
+    var filtered = [];
+    for (var i = 0; i < pedidos.length; i++) {
+        var p = pedidos[i];
+        var cl = null;
+        for (var j = 0; j < clientes.length; j++) { if (clientes[j].id === p.clienteId) { cl = clientes[j]; break; } }
+        var nombre = cl ? cl.nombre.toLowerCase() : '';
+        var match = (!search || nombre.indexOf(search) !== -1);
+        for (var k = 0; k < p.items.length; k++) { if (p.items[k].tipo.toLowerCase().indexOf(search) !== -1) match = true; }
+        if (match && (!filterEstado || p.estado === filterEstado) && (!filterPago || p.estadoPago === filterPago)) filtered.push(p);
+    }
+    filtered.sort(function(a, b) { return b.fecha > a.fecha ? 1 : -1; });
+    var tb = document.getElementById('tPedidos');
+    if (filtered.length === 0) { tb.innerHTML = '<tr><td colspan="8" class="es">Sin pedidos</td></tr>'; return; }
+    var html = '';
+    for (var i = 0; i < filtered.length; i++) {
+        var p = filtered[i];
+        var cl = null;
+        for (var j = 0; j < clientes.length; j++) { if (clientes[j].id === p.clienteId) { cl = clientes[j]; break; } }
+        var hoy = new Date().toISOString().split('T')[0];
+        var vto = p.fechaPagoEstimado && p.fechaPagoEstimado < hoy && p.estadoPago !== 'Pagado';
+        var pagoBadge = p.estadoPago === 'Pagado' ? 'ba-p' : (vto ? 'ba-v' : 'ba-pn');
+        var pagoText = p.estadoPago === 'Pagado' ? 'Pagado' : (vto ? 'Vencido' : 'Pendiente');
+        var deuda = getDeudaRestante(p.id, pedidos, pagos);
+        html += '<tr><td>' + fmt(p.fecha) + '</td><td>' + (cl ? cl.nombre : 'N/A') + '</td><td>' + getItemsSummary(p.items) + '</td><td>$' + p.total.toLocaleString() + '</td><td><span class="ba ' + getStatusBadge(p.estado) + '">' + p.estado + '</span></td><td><span class="ba ' + pagoBadge + '">' + pagoText + '</span></td><td style="color:' + (deuda > 0 ? '#EF4444' : '#22C55E') + '">$' + deuda.toLocaleString() + '</td><td><button class="btn bsm bs" onclick="editPedido(\'' + p.id + '\')">✏️</button> <button class="btn bsm bd" onclick="deletePedido(\'' + p.id + '\')">🗑️</button></td></tr>';
+    }
+    tb.innerHTML = html;
+}
+
+async function savePedido() {
+    var inp = document.querySelector('#modalPedido input[type=hidden]');
+    var id = inp ? inp.value : '';
+    var items = getPItemsData();
+    if (items.length === 0) { notify('Agregá al menos un producto', 'error'); return; }
+    var total = 0;
+    for (var i = 0; i < items.length; i++) total += items[i].subtotal;
+    var d = {
+        id: id || genId(), clienteId: document.getElementById('pCliente').value,
+        items: items, total: total,
+        canal: document.getElementById('pCanal').value, estado: document.getElementById('pEstado').value,
+        estadoPago: document.getElementById('pPago').value,
+        fechaPagoEstimado: document.getElementById('pFPago').value || null,
+        fecha: document.getElementById('pFecha').value, notas: document.getElementById('pNotas').value.trim()
+    };
+    if (!d.clienteId) { notify('Seleccioná un cliente', 'error'); return; }
+    var ok = id ? await dbUpdate('pedidos', id, d) : await dbInsert('pedidos', d);
+    if (ok) { closeModal('modalPedido'); resetPItems(); renderPedidos(); updateDashboard(); notify(id ? 'Actualizado' : 'Registrado'); }
+}
+
+async function editPedido(id) {
+    var pedidos = await dbGet('pedidos');
+    var p = null;
+    for (var i = 0; i < pedidos.length; i++) { if (pedidos[i].id === id) { p = pedidos[i]; break; } }
+    if (!p) return;
+    await populateClientes();
+    setTimeout(function() {
+        var inp = document.querySelector('#modalPedido input[type=hidden]');
+        if (!inp) { inp = document.createElement('input'); inp.type = 'hidden'; inp.id = 'pedidoId'; document.querySelector('#modalPedido .mb').prepend(inp); }
+        inp.value = p.id;
+        document.getElementById('pCliente').value = p.clienteId;
+        document.getElementById('pCanal').value = p.canal;
+        document.getElementById('pEstado').value = p.estado;
+        document.getElementById('pPago').value = p.estadoPago;
+        document.getElementById('pFPago').value = p.fechaPagoEstimado || '';
+        document.getElementById('pFecha').value = p.fecha;
+        document.getElementById('pNotas').value = p.notas || '';
+        toggleFP();
+        resetPItems();
+        for (var i = 0; i < p.items.length; i++) {
+            if (i > 0) addPItem();
+            var rows = document.querySelectorAll('#pItems .ir');
+            var row = rows[rows.length - 1];
+            var rid = row.id.replace('item-row-', '');
+            document.getElementById('itTipo_' + rid).value = p.items[i].tipo;
+            document.getElementById('itCant_' + rid).value = p.items[i].cantidad;
+            document.getElementById('itPrecio_' + rid).value = p.items[i].precioUnitario;
+            calcIS(rid);
         }
+    }, 100);
+    openModal('modalPedido');
+}
 
-        async function populatePedidosParaPago() {
-            var pedidos = await dbGet('pedidos');
-            var pagos = await dbGet('pagos');
-            var sel = document.getElementById('pagoPedido');
-            var html = '<option value="">Seleccionar...</option>';
-            for (var i = 0; i < pedidos.length; i++) {
-                if (pedidos[i].estadoPago !== 'Pagado') {
-                    var pagado = 0;
-                    for (var j = 0; j < pagos.length; j++) { if (pagos[j].pedidoId === pedidos[i].id) pagado += pagos[j].monto; }
-                    var restante = pedidos[i].total - pagado;
-                    var itemsDesc = '';
-                    for (var j = 0; j < pedidos[i].items.length; j++) { itemsDesc += pedidos[i].items[j].tipo + ' x' + pedidos[i].items[j].cantidad + ' '; }
-                    html += '<option value="' + pedidos[i].id + '">' + itemsDesc.trim() + ' - Rest: $' + restante.toLocaleString() + '</option>';
-                }
-            }
-            sel.innerHTML = html;
-        }
+async function deletePedido(id) {
+    if (!confirm('¿Eliminar este pedido y sus pagos?')) return;
+    if (await deletePedidoWithPagos(id)) { notify('Eliminado'); renderPedidos(); updateDashboard(); }
+}
 
-        var itemCounter = 0;
+// ============================================================
+// CLIENTES
+// ============================================================
+async function renderClientes() {
+    var clientes = await dbGet('clientes');
+    var pedidos = await dbGet('pedidos');
+    var pagos = await dbGet('pagos');
+    var search = (document.getElementById('searchCliente') || {}).value || '';
+    search = search.toLowerCase();
+    var filtered = [];
+    for (var i = 0; i < clientes.length; i++) { if (clientes[i].nombre.toLowerCase().indexOf(search) !== -1) filtered.push(clientes[i]); }
+    var tb = document.getElementById('tClientes');
+    if (filtered.length === 0) { tb.innerHTML = '<tr><td colspan="7" class="es">Sin clientes</td></tr>'; return; }
+    var html = '';
+    for (var i = 0; i < filtered.length; i++) {
+        var c = filtered[i];
+        var tot = 0;
+        for (var j = 0; j < pedidos.length; j++) { if (pedidos[j].clienteId === c.id) tot += pedidos[j].total; }
+        var deuda = calcDeudaCliente(c.id, pedidos, pagos);
+        var bc = (c.tipo === 'Almacen' || c.tipo === 'Almacén') ? 'ba-al' : 'ba-cl';
+        var wa = c.telefono ? '<a href="https://wa.me/54' + c.telefono.replace(/\D/g, '') + '" target="_blank" class="btn bsm bg" style="text-decoration:none;margin-left:4px">📱</a>' : '';
+        html += '<tr><td><b>' + c.nombre + '</b></td><td><span class="ba ' + bc + '">' + c.tipo + '</span></td><td>' + (c.telefono || '-') + '</td><td>' + (c.direccion || '-') + '</td><td>$' + tot.toLocaleString() + '</td><td style="color:' + (deuda > 0 ? '#EF4444' : '#22C55E') + '">$' + deuda.toLocaleString() + '</td><td><button class="btn bsm bs" onclick="editCliente(\'' + c.id + '\')">✏️</button> <button class="btn bsm bd" onclick="deleteCliente(\'' + c.id + '\')">🗑️</button> ' + wa + '</td></tr>';
+    }
+    tb.innerHTML = html;
+}
 
-        window.resetPedidoItems = function() {
-            document.getElementById('pedidoItems').innerHTML = '';
-            itemCounter = 0;
-            addPedidoItem();
-        };
+async function saveCliente() {
+    var id = document.getElementById('cId').value;
+    var d = { id: id || genId(), nombre: document.getElementById('cNombre').value.trim(), tipo: document.getElementById('cTipo').value, telefono: document.getElementById('cTel').value.trim(), direccion: document.getElementById('cDir').value.trim(), notas: document.getElementById('cNotas').value.trim() };
+    if (!d.nombre) { notify('Nombre obligatorio', 'error'); return; }
+    var ok = id ? await dbUpdate('clientes', id, d) : await dbInsert('clientes', d);
+    if (ok) { closeModal('modalCliente'); clearClienteForm(); renderClientes(); notify(id ? 'Actualizado' : 'Registrado'); }
+}
 
-        window.addPedidoItem = function() {
-            itemCounter++;
-            var id = itemCounter;
-            var container = document.getElementById('pedidoItems');
-            var row = document.createElement('div');
-            row.className = 'item-row';
-            row.id = 'item-row-' + id;
-            row.innerHTML = '<div><label>Tipo</label><select class="form-select" id="itemTipo_' + id + '" onchange="calcItemSubtotal(' + id + ')"><option value="">...</option><option value="Muzzarella">Muzzarella</option><option value="Especial">Especial</option></select></div><div><label>Cantidad</label><input type="number" class="form-input" id="itemCant_' + id + '" min="1" value="1" oninput="calcItemSubtotal(' + id + ')"></div><div><label>Precio Unit.</label><input type="number" class="form-input" id="itemPrecio_' + id + '" oninput="calcItemSubtotal(' + id + ')"></div><div><label>Subtotal</label><div class="item-subtotal" id="itemSub_' + id + '">$0</div></div><div><button class="remove-item" onclick="removePedidoItem(' + id + ')">✕</button></div>';
-            container.appendChild(row);
-            calcPedidoTotalDisplay();
-        };
+async function editCliente(id) {
+    var clientes = await dbGet('clientes');
+    var c = null;
+    for (var i = 0; i < clientes.length; i++) { if (clientes[i].id === id) { c = clientes[i]; break; } }
+    if (!c) return;
+    document.getElementById('cId').value = c.id;
+    document.getElementById('cNombre').value = c.nombre;
+    document.getElementById('cTipo').value = c.tipo;
+    document.getElementById('cTel').value = c.telefono || '';
+    document.getElementById('cDir').value = c.direccion || '';
+    document.getElementById('cNotas').value = c.notas || '';
+    document.getElementById('tCliente').textContent = 'Editar Cliente';
+    openModal('modalCliente');
+}
 
-        window.removePedidoItem = function(id) {
-            var row = document.getElementById('item-row-' + id);
-            if (row) row.remove();
-            calcPedidoTotalDisplay();
-        };
+async function deleteCliente(id) { if (!confirm('¿Eliminar?')) return; if (await dbDelete('clientes', id)) { notify('Eliminado'); renderClientes(); } }
 
-        window.calcItemSubtotal = function(id) {
-            var tipo = document.getElementById('itemTipo_' + id).value;
-            var precioInput = document.getElementById('itemPrecio_' + id);
-            var subDisplay = document.getElementById('itemSub_' + id);
-            if (tipo === 'Muzzarella' && !precioInput.value) precioInput.value = 5000;
-            if (tipo === 'Especial' && !precioInput.value) precioInput.value = 7000;
-            var cant = parseInt(document.getElementById('itemCant_' + id).value) || 0;
-            var precio = parseFloat(precioInput.value) || 0;
-            var sub = cant * precio;
-            subDisplay.textContent = '$' + sub.toLocaleString();
-            calcPedidoTotalDisplay();
-        };
+function clearClienteForm() {
+    document.getElementById('cId').value = ''; document.getElementById('cNombre').value = ''; document.getElementById('cTipo').value = 'Almacén';
+    document.getElementById('cTel').value = ''; document.getElementById('cDir').value = ''; document.getElementById('cNotas').value = '';
+    document.getElementById('tCliente').textContent = 'Nuevo Cliente';
+}
 
-        function calcPedidoTotalDisplay() {
-            var total = 0;
-            var rows = document.querySelectorAll('#pedidoItems .item-row');
-            for (var i = 0; i < rows.length; i++) {
-                var id = rows[i].id.replace('item-row-', '');
-                var cant = parseInt(document.getElementById('itemCant_' + id).value) || 0;
-                var precio = parseFloat(document.getElementById('itemPrecio_' + id).value) || 0;
-                total += cant * precio;
-            }
-            document.getElementById('pedidoTotalDisplay').textContent = '$' + total.toLocaleString();
-        }
+// ============================================================
+// PAGOS
+// ============================================================
+async function savePago() {
+    var d = { id: genId(), pedidoId: document.getElementById('pagPedido').value, monto: parseFloat(document.getElementById('pagMonto').value), metodo: document.getElementById('pagMetodo').value, fecha: document.getElementById('pagFecha').value };
+    if (!d.pedidoId || !d.monto) { notify('Faltan datos', 'error'); return; }
+    var pedidos = await dbGet('pedidos');
+    var pedido = null;
+    for (var i = 0; i < pedidos.length; i++) { if (pedidos[i].id === d.pedidoId) { pedido = pedidos[i]; break; } }
+    if (!pedido) { notify('No encontrado', 'error'); return; }
+    var pagos = await dbGet('pagos');
+    var pagado = 0;
+    for (var i = 0; i < pagos.length; i++) { if (pagos[i].pedidoId === d.pedidoId) pagado += pagos[i].monto; }
+    if (pagado + d.monto > pedido.total) { notify('Excede la deuda', 'error'); return; }
+    if (await dbInsert('pagos', d)) {
+        if (pagado + d.monto >= pedido.total) await dbUpdate('pedidos', d.pedidoId, { estadoPago: 'Pagado' });
+        closeModal('modalPago');
+        document.getElementById('pagMonto').value = '';
+        renderDeudas();
+        updateDashboard();
+        notify('Pago registrado');
+    }
+}
 
-        function getPedidoItemsData() {
-            var items = [];
-            var rows = document.querySelectorAll('#pedidoItems .item-row');
-            for (var i = 0; i < rows.length; i++) {
-                var id = rows[i].id.replace('item-row-', '');
-                var tipo = document.getElementById('itemTipo_' + id).value;
-                var cant = parseInt(document.getElementById('itemCant_' + id).value) || 0;
-                var precio = parseFloat(document.getElementById('itemPrecio_' + id).value) || 0;
-                if (tipo && cant > 0) {
-                    items.push({ tipo: tipo, cantidad: cant, precioUnitario: precio, subtotal: cant * precio });
-                }
-            }
-            return items;
-        }
+async function deletePago(id) { if (!confirm('¿Eliminar?')) return; if (await dbDelete('pagos', id)) { notify('Eliminado'); renderDeudas(); updateDashboard(); } }
 
-        window.toggleFechaPago = function() {
-            var estado = document.getElementById('pedidoEstadoPago').value;
-            var container = document.getElementById('fechaPagoContainer');
-            if (estado === 'Pendiente') {
-                container.classList.remove('section-hidden');
-                var nw = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-                document.getElementById('pedidoFechaPago').value = nw.toISOString().split('T')[0];
-            } else { container.classList.add('section-hidden'); }
-        };
-
-        async function renderPedidos() {
-            var pedidos = await dbGet('pedidos');
-            var clientes = await dbGet('clientes');
-            var pagos = await dbGet('pagos');
-            var search = (document.getElementById('searchPedido') || {}).value || '';
-            search = search.toLowerCase();
-            var filterEstado = document.getElementById('filterPedidoEstado').value;
-            var filterPago = document.getElementById('filterPedidoPago').value;
-            var filtered = [];
-            for (var i = 0; i < pedidos.length; i++) {
-                var p = pedidos[i];
-                var cl = null;
-                for (var j = 0; j < clientes.length; j++) { if (clientes[j].id === p.clienteId) { cl = clientes[j]; break; } }
-                var nombre = cl ? cl.nombre.toLowerCase() : '';
-                var match = (!search || nombre.indexOf(search) !== -1);
-                for (var k = 0; k < p.items.length; k++) { if (p.items[k].tipo.toLowerCase().indexOf(search) !== -1) match = true; }
-                if (match && (!filterEstado || p.estado === filterEstado) && (!filterPago || p.estadoPago === filterPago)) filtered.push(p);
-            }
-            filtered.sort(function(a, b) { return b.fecha > a.fecha ? 1 : -1; });
-            var tb = document.getElementById('tablaPedidos');
-            if (filtered.length === 0) { tb.innerHTML = '<tr><td colspan="8" class="empty-state">Sin pedidos</td></tr>'; return; }
-            var html = '';
-            for (var i = 0; i < filtered.length; i++) {
-                var p = filtered[i];
-                var cl = null;
-                for (var j = 0; j < clientes.length; j++) { if (clientes[j].id === p.clienteId) { cl = clientes[j]; break; } }
-                var hoy = new Date().toISOString().split('T')[0];
-                var vto = p.fechaPagoEstimado && p.fechaPagoEstimado < hoy && p.estadoPago !== 'Pagado';
-                var pagoBadge = p.estadoPago === 'Pagado' ? 'badge-pagado' : (vto ? 'badge-vencido' : 'badge-pendiente');
-                var pagoText = p.estadoPago === 'Pagado' ? 'Pagado' : (vto ? 'Vencido' : 'Pendiente');
-                var deuda = getDeudaRestante(p.id, pedidos, pagos);
-                var itemsHtml = getItemsSummary(p.items);
-                html += '<tr><td>' + fmt(p.fecha) + '</td><td>' + (cl ? cl.nombre : 'N/A') + '</td><td>' + itemsHtml + '</td><td>$' + p.total.toLocaleString() + '</td><td><span class="badge ' + getStatusBadge(p.estado) + '">' + p.estado + '</span></td><td><span class="badge ' + pagoBadge + '">' + pagoText + '</span></td><td style="color:' + (deuda > 0 ? '#EF4444' : '#22C55E') + '">$' + deuda.toLocaleString() + '</td><td><button class="btn btn-secondary btn-sm" onclick="editPedido(\'' + p.id + '\')">✏️</button> <button class="btn btn-danger btn-sm" onclick="deletePedido(\'' + p.id + '\')">🗑️</button></td></tr>';
-            }
-            tb.innerHTML = html;
-        }
-        window.renderPedidos = renderPedidos;
-
-        async function savePedido() {
-            var inp = document.querySelector('#modalPedido input[type=hidden]');
-            var id = inp ? inp.value : '';
-            var items = getPedidoItemsData();
-            if (items.length === 0) { notify('Agregá al menos un producto', 'error'); return; }
-            var total = 0;
-            for (var i = 0; i < items.length; i++) total += items[i].subtotal;
-            var d = {
-                id: id || genId(), clienteId: document.getElementById('pedidoCliente').value,
-                items: items, total: total,
-                canal: document.getElementById('pedidoCanal').value, estado: document.getElementById('pedidoEstado').value,
-                estadoPago: document.getElementById('pedidoEstadoPago').value,
-                fechaPagoEstimado: document.getElementById('pedidoFechaPago').value || null,
-                fecha: document.getElementById('pedidoFecha').value, notas: document.getElementById('pedidoNotas').value.trim()
-            };
-            if (!d.clienteId) { notify('Seleccioná un cliente', 'error'); return; }
-            var ok = id ? await dbUpdate('pedidos', id, d) : await dbInsert('pedidos', d);
-            if (ok) { closeModal('modalPedido'); resetPedidoItems(); renderPedidos(); updateDashboard(); notify(id ? 'Actualizado' : 'Registrado'); }
-        }
-        window.savePedido = savePedido;
-
-        async function editPedido(id) {
-            var pedidos = await dbGet('pedidos');
-            var p = null;
-            for (var i = 0; i < pedidos.length; i++) { if (pedidos[i].id === id) { p = pedidos[i]; break; } }
-            if (!p) return;
-            await populateClientes();
-            setTimeout(function() {
-                var inp = document.querySelector('#modalPedido input[type=hidden]');
-                if (!inp) { inp = document.createElement('input'); inp.type = 'hidden'; inp.id = 'pedidoId'; document.querySelector('#modalPedido .modal-body').prepend(inp); }
-                inp.value = p.id;
-                document.getElementById('pedidoCliente').value = p.clienteId;
-                document.getElementById('pedidoCanal').value = p.canal;
-                document.getElementById('pedidoEstado').value = p.estado;
-                document.getElementById('pedidoEstadoPago').value = p.estadoPago;
-                document.getElementById('pedidoFechaPago').value = p.fechaPagoEstimado || '';
-                document.getElementById('pedidoFecha').value = p.fecha;
-                document.getElementById('pedidoNotas').value = p.notas || '';
-                toggleFechaPago();
-                resetPedidoItems();
-                for (var i = 0; i < p.items.length; i++) {
-                    if (i > 0) addPedidoItem();
-                    var rows = document.querySelectorAll('#pedidoItems .item-row');
-                    var row = rows[rows.length - 1];
-                    var rid = row.id.replace('item-row-', '');
-                    document.getElementById('itemTipo_' + rid).value = p.items[i].tipo;
-                    document.getElementById('itemCant_' + rid).value = p.items[i].cantidad;
-                    document.getElementById('itemPrecio_' + rid).value = p.items[i].precioUnitario;
-                    calcItemSubtotal(rid);
-                }
-            }, 100);
-            openModal('modalPedido');
-        }
-        window.editPedido = editPedido;
-
-        async function deletePedido(id) {
-            if (!confirm('¿Eliminar este pedido y sus pagos asociados?')) return;
-            if (await deletePedidoWithPagos(id)) { notify('Eliminado'); renderPedidos(); updateDashboard(); }
-        }
-        window.deletePedido = deletePedido;
-
-        async function renderClientes() {
-            var clientes = await dbGet('clientes');
-            var pedidos = await dbGet('pedidos');
-            var pagos = await dbGet('pagos');
-            var search = (document.getElementById('searchCliente') || {}).value || '';
-            search = search.toLowerCase();
-            var filtered = [];
-            for (var i = 0; i < clientes.length; i++) { if (clientes[i].nombre.toLowerCase().indexOf(search) !== -1) filtered.push(clientes[i]); }
-            var tb = document.getElementById('tablaClientes');
-            if (filtered.length === 0) { tb.innerHTML = '<tr><td colspan="7" class="empty-state">No hay clientes</td></tr>'; return; }
-            var html = '';
-            for (var i = 0; i < filtered.length; i++) {
-                var c = filtered[i];
-                var totCompras = 0;
-                for (var j = 0; j < pedidos.length; j++) { if (pedidos[j].clienteId === c.id) totCompras += pedidos[j].total; }
-                var deuda = calcDeudaCliente(c.id, pedidos, pagos);
-                var badgeClass = (c.tipo === 'Almacen' || c.tipo === 'Almacén') ? 'badge-almacen' : 'badge-cliente';
-                var waLink = c.telefono ? '<a href="https://wa.me/54' + c.telefono.replace(/\D/g, '') + '" target="_blank" class="btn btn-success btn-sm" style="text-decoration:none;margin-left:4px;">📱</a>' : '';
-                html += '<tr><td><strong>' + c.nombre + '</strong></td><td><span class="badge ' + badgeClass + '">' + c.tipo + '</span></td><td>' + (c.telefono || '-') + '</td><td>' + (c.direccion || '-') + '</td><td>$' + totCompras.toLocaleString() + '</td><td style="color:' + (deuda > 0 ? '#EF4444' : '#22C55E') + '">$' + deuda.toLocaleString() + '</td><td><button class="btn btn-secondary btn-sm" onclick="editCliente(\'' + c.id + '\')">✏️</button> <button class="btn btn-danger btn-sm" onclick="deleteCliente(\'' + c.id + '\')">🗑️</button> ' + waLink + '</td></tr>';
-            }
-            tb.innerHTML = html;
-        }
-        window.renderClientes = renderClientes;
-
-        async function saveCliente() {
-            var id = document.getElementById('clienteId').value;
-            var d = { id: id || genId(), nombre: document.getElementById('clienteNombre').value.trim(), tipo: document.getElementById('clienteTipo').value, telefono: document.getElementById('clienteTelefono').value.trim(), direccion: document.getElementById('clienteDireccion').value.trim(), notas: document.getElementById('clienteNotas').value.trim() };
-            if (!d.nombre) { notify('Nombre obligatorio', 'error'); return; }
-            var ok = id ? await dbUpdate('clientes', id, d) : await dbInsert('clientes', d);
-            if (ok) { closeModal('modalCliente'); clearClienteForm(); renderClientes(); notify(id ? 'Actualizado' : 'Registrado'); }
-        }
-        window.saveCliente = saveCliente;
-
-        async function editCliente(id) {
-            var clientes = await dbGet('clientes');
-            var c = null;
-            for (var i = 0; i < clientes.length; i++) { if (clientes[i].id === id) { c = clientes[i]; break; } }
-            if (!c) return;
-            document.getElementById('clienteId').value = c.id;
-            document.getElementById('clienteNombre').value = c.nombre;
-            document.getElementById('clienteTipo').value = c.tipo;
-            document.getElementById('clienteTelefono').value = c.telefono || '';
-            document.getElementById('clienteDireccion').value = c.direccion || '';
-            document.getElementById('clienteNotas').value = c.notas || '';
-            document.getElementById('tituloCliente').textContent = 'Editar Cliente';
-            openModal('modalCliente');
-        }
-        window.editCliente = editCliente;
-
-        async function deleteCliente(id) { if (!confirm('¿Eliminar?')) return; if (await dbDelete('clientes', id)) { notify('Eliminado'); renderClientes(); } }
-        window.deleteCliente = deleteCliente;
-
-        function clearClienteForm() {
-            document.getElementById('clienteId').value = '';
-            document.getElementById('clienteNombre').value = '';
-            document.getElementById('clienteTipo').value = 'Almacén';
-            document.getElementById('clienteTelefono').value = '';
-            document.getElementById('clienteDireccion').value = '';
-            document.getElementById('clienteNotas').value = '';
-            document.getElementById('tituloCliente').textContent = 'Nuevo Cliente';
-        }
-
-        async function savePago() {
-            var d = { id: genId(), pedidoId: document.getElementById('pagoPedido').value, monto: parseFloat(document.getElementById('pagoMonto').value), metodo: document.getElementById('pagoMetodo').value, fecha: document.getElementById('pagoFecha').value };
-            if (!d.pedidoId || !d.monto) { notify('Faltan datos', 'error'); return; }
-            var pedidos = await dbGet('pedidos');
-            var pedido = null;
-            for (var i = 0; i < pedidos.length; i++) { if (pedidos[i].id === d.pedidoId) { pedido = pedidos[i]; break; } }
-            if (!pedido) { notify('Pedido no encontrado', 'error'); return; }
-            var pagos = await dbGet('pagos');
+async function renderDeudas() {
+    var pedidos = await dbGet('pedidos');
+    var clientes = await dbGet('clientes');
+    var pagos = await dbGet('pagos');
+    var hoy = new Date().toISOString().split('T')[0];
+    var pend = [];
+    for (var i = 0; i < pedidos.length; i++) { if (pedidos[i].estadoPago !== 'Pagado') pend.push(pedidos[i]); }
+    var totD = 0, venc = 0;
+    for (var i = 0; i < pend.length; i++) {
+        var pagado = 0;
+        for (var j = 0; j < pagos.length; j++) { if (pagos[j].pedidoId === pend[i].id) pagado += pagos[j].monto; }
+        var rest = pend[i].total - pagado;
+        totD += rest;
+        if (pend[i].fechaPagoEstimado && pend[i].fechaPagoEstimado < hoy) venc += rest;
+    }
+    var mesActual = hoy.substring(0, 7);
+    var cobMes = 0;
+    for (var i = 0; i < pagos.length; i++) { if (pagos[i].fecha && pagos[i].fecha.substring(0, 7) === mesActual) cobMes += pagos[i].monto; }
+    document.getElementById('kpiTD').textContent = '$' + totD.toLocaleString();
+    document.getElementById('kpiDV').textContent = '$' + venc.toLocaleString();
+    document.getElementById('kpiCM').textContent = '$' + cobMes.toLocaleString();
+    var tb = document.getElementById('tDeudas');
+    if (pend.length === 0) { tb.innerHTML = '<tr><td colspan="8" class="es">🎉 ¡Sin deudas!</td></tr>'; }
+    else {
+        pend.sort(function(a, b) { return (a.fechaPagoEstimado || '9999') > (b.fechaPagoEstimado || '9999') ? 1 : -1; });
+        var html = '';
+        for (var i = 0; i < pend.length; i++) {
+            var p = pend[i];
+            var cl = null;
+            for (var j = 0; j < clientes.length; j++) { if (clientes[j].id === p.clienteId) { cl = clientes[j]; break; } }
             var pagado = 0;
-            for (var i = 0; i < pagos.length; i++) { if (pagos[i].pedidoId === d.pedidoId) pagado += pagos[i].monto; }
-            if (pagado + d.monto > pedido.total) { notify('Excede la deuda', 'error'); return; }
-            if (await dbInsert('pagos', d)) {
-                if (pagado + d.monto >= pedido.total) await dbUpdate('pedidos', d.pedidoId, { estadoPago: 'Pagado' });
-                closeModal('modalPago');
-                document.getElementById('pagoMonto').value = '';
-                renderDeudas();
-                updateDashboard();
-                notify('Pago registrado');
-            }
+            for (var j = 0; j < pagos.length; j++) { if (pagos[j].pedidoId === p.id) pagado += pagos[j].monto; }
+            var rest = p.total - pagado;
+            var vto = p.fechaPagoEstimado && p.fechaPagoEstimado < hoy;
+            var desc = '';
+            for (var j = 0; j < p.items.length; j++) { desc += p.items[j].tipo + ' x' + p.items[j].cantidad + ' '; }
+            html += '<tr><td>' + (cl ? cl.nombre : 'N/A') + '</td><td>' + desc.trim() + '</td><td>$' + p.total.toLocaleString() + '</td><td>$' + pagado.toLocaleString() + '</td><td style="color:#EF4444;font-weight:700">$' + rest.toLocaleString() + '</td><td>' + (p.fechaPagoEstimado ? fmt(p.fechaPagoEstimado) : '-') + '</td><td><span class="ba ' + (vto ? 'ba-v' : 'ba-pn') + '">' + (vto ? 'VENCIDO' : 'Pendiente') + '</span></td><td><button class="btn bsm bg" onclick="quickPay(\'' + p.id + '\',' + rest + ')">💵</button></td></tr>';
         }
-        window.savePago = savePago;
-
-        async function deletePago(id) { if (!confirm('¿Eliminar?')) return; if (await dbDelete('pagos', id)) { notify('Eliminado'); renderDeudas(); updateDashboard(); } }
-        window.deletePago = deletePago;
-
-        async function renderDeudas() {
-            var pedidos = await dbGet('pedidos');
-            var clientes = await dbGet('clientes');
-            var pagos = await dbGet('pagos');
-            var hoy = new Date().toISOString().split('T')[0];
-            var pend = [];
-            for (var i = 0; i < pedidos.length; i++) { if (pedidos[i].estadoPago !== 'Pagado') pend.push(pedidos[i]); }
-            var totD = 0, venc = 0;
-            for (var i = 0; i < pend.length; i++) {
-                var pagado = 0;
-                for (var j = 0; j < pagos.length; j++) { if (pagos[j].pedidoId === pend[i].id) pagado += pagos[j].monto; }
-                var rest = pend[i].total - pagado;
-                totD += rest;
-                if (pend[i].fechaPagoEstimado && pend[i].fechaPagoEstimado < hoy) venc += rest;
-            }
-            var mesActual = hoy.substring(0, 7);
-            var cobMes = 0;
-            for (var i = 0; i < pagos.length; i++) { if (pagos[i].fecha && pagos[i].fecha.substring(0, 7) === mesActual) cobMes += pagos[i].monto; }
-            document.getElementById('kpiTotalDeudas').textContent = '$' + totD.toLocaleString();
-            document.getElementById('kpiDeudasVencidas').textContent = '$' + venc.toLocaleString();
-            document.getElementById('kpiCobradasMes').textContent = '$' + cobMes.toLocaleString();
-            var tb = document.getElementById('tablaDeudas');
-            if (pend.length === 0) { tb.innerHTML = '<tr><td colspan="8" class="empty-state">🎉 ¡Sin deudas!</td></tr>'; }
-            else {
-                pend.sort(function(a, b) { return (a.fechaPagoEstimado || '9999') > (b.fechaPagoEstimado || '9999') ? 1 : -1; });
-                var html = '';
-                for (var i = 0; i < pend.length; i++) {
-                    var p = pend[i];
-                    var cl = null;
-                    for (var j = 0; j < clientes.length; j++) { if (clientes[j].id === p.clienteId) { cl = clientes[j]; break; } }
-                    var pagado = 0;
-                    for (var j = 0; j < pagos.length; j++) { if (pagos[j].pedidoId === p.id) pagado += pagos[j].monto; }
-                    var rest = p.total - pagado;
-                    var vto = p.fechaPagoEstimado && p.fechaPagoEstimado < hoy;
-                    var itemsDesc = '';
-                    for (var j = 0; j < p.items.length; j++) { itemsDesc += p.items[j].tipo + ' x' + p.items[j].cantidad + ' '; }
-                    html += '<tr><td>' + (cl ? cl.nombre : 'N/A') + '</td><td>' + itemsDesc.trim() + '</td><td>$' + p.total.toLocaleString() + '</td><td>$' + pagado.toLocaleString() + '</td><td style="color:#EF4444;font-weight:700">$' + rest.toLocaleString() + '</td><td>' + (p.fechaPagoEstimado ? fmt(p.fechaPagoEstimado) : '-') + '</td><td><span class="badge ' + (vto ? 'badge-vencido' : 'badge-pendiente') + '">' + (vto ? 'VENCIDO' : 'Pendiente') + '</span></td><td><button class="btn btn-success btn-sm" onclick="quickPay(\'' + p.id + '\',' + rest + ')">💵</button></td></tr>';
-                }
-                tb.innerHTML = html;
-            }
-            var tp = document.getElementById('tablaPagos');
-            var ps = pagos.slice().sort(function(a, b) { return b.fecha > a.fecha ? 1 : -1; });
-            if (ps.length === 0) { tp.innerHTML = '<tr><td colspan="5" class="empty-state">Sin pagos</td></tr>'; }
-            else {
-                var html = '';
-                for (var i = 0; i < ps.length; i++) {
-                    var pa = ps[i];
-                    var vt = null;
-                    for (var j = 0; j < pedidos.length; j++) { if (pedidos[j].id === pa.pedidoId) { vt = pedidos[j]; break; } }
-                    var cl = null;
-                    if (vt) { for (var j = 0; j < clientes.length; j++) { if (clientes[j].id === vt.clienteId) { cl = clientes[j]; break; } } }
-                    html += '<tr><td>' + fmt(pa.fecha) + '</td><td>' + (cl ? cl.nombre : 'N/A') + '</td><td style="color:#22C55E;font-weight:700">$' + pa.monto.toLocaleString() + '</td><td>' + pa.metodo + '</td><td><button class="btn btn-danger btn-sm" onclick="deletePago(\'' + pa.id + '\')">🗑️</button></td></tr>';
-                }
-                tp.innerHTML = html;
-            }
+        tb.innerHTML = html;
+    }
+    var tp = document.getElementById('tPagos');
+    var ps = pagos.slice().sort(function(a, b) { return b.fecha > a.fecha ? 1 : -1; });
+    if (ps.length === 0) { tp.innerHTML = '<tr><td colspan="5" class="es">Sin pagos</td></tr>'; }
+    else {
+        var html = '';
+        for (var i = 0; i < ps.length; i++) {
+            var pa = ps[i];
+            var vt = null;
+            for (var j = 0; j < pedidos.length; j++) { if (pedidos[j].id === pa.pedidoId) { vt = pedidos[j]; break; } }
+            var cl = null;
+            if (vt) { for (var j = 0; j < clientes.length; j++) { if (clientes[j].id === vt.clienteId) { cl = clientes[j]; break; } } }
+            html += '<tr><td>' + fmt(pa.fecha) + '</td><td>' + (cl ? cl.nombre : 'N/A') + '</td><td style="color:#22C55E;font-weight:700">$' + pa.monto.toLocaleString() + '</td><td>' + pa.metodo + '</td><td><button class="btn bsm bd" onclick="deletePago(\'' + pa.id + '\')">🗑️</button></td></tr>';
         }
-        window.renderDeudas = renderDeudas;
+        tp.innerHTML = html;
+    }
+}
 
-        window.quickPay = function(pid, rest) {
-            populatePedidosParaPago();
-            setTimeout(function() {
-                document.getElementById('pagoPedido').value = pid;
-                document.getElementById('pagoMonto').value = rest;
-                openModal('modalPago');
-            }, 100);
-        };
+function quickPay(pid, rest) {
+    populatePedidosParaPago();
+    setTimeout(function() {
+        document.getElementById('pagPedido').value = pid;
+        document.getElementById('pagMonto').value = rest;
+        openModal('modalPago');
+    }, 100);
+}
 
-        async function renderInsumos() {
-            var insumos = await dbGet('insumos');
-            var costo = 0;
-            for (var i = 0; i < insumos.length; i++) costo += (insumos[i].precio || 0) * (insumos[i].usoPorPizza || 0);
-            var tipos = ['Muzzarella', 'Especial'];
-            var pvMap = { 'Muzzarella': 5000, 'Especial': 7000 };
-            var html = '';
-            for (var i = 0; i < tipos.length; i++) {
-                var pv = pvMap[tipos[i]];
-                var gan = pv - costo;
-                var margen = pv > 0 ? ((gan / pv) * 100).toFixed(1) : 0;
-                html += '<div style="background:#0f0f0f;padding:16px;border-radius:12px;"><h4 style="color:#FF6B35;margin-bottom:8px;">🍕 ' + tipos[i] + '</h4><p style="color:#666;font-size:13px;">Costo: <b style="color:white">$' + costo.toLocaleString() + '</b><br>Venta: <b style="color:white">$' + pv.toLocaleString() + '</b><br>Ganancia: <b style="color:#22C55E">$' + gan.toLocaleString() + '</b> (' + margen + '%)</p></div>';
-            }
-            document.getElementById('costoPorPizza').innerHTML = html;
-            var tb = document.getElementById('tablaInsumos');
-            if (insumos.length === 0) { tb.innerHTML = '<tr><td colspan="8" class="empty-state">Sin insumos</td></tr>'; return; }
-            html = '';
-            for (var i = 0; i < insumos.length; i++) {
-                var x = insumos[i];
-                var cp = (x.precio || 0) * (x.usoPorPizza || 0);
-                html += '<tr><td><b>' + x.nombre + '</b></td><td>' + (x.marca || '-') + '</td><td>' + x.unidad + '</td><td>$' + x.precio.toLocaleString() + '</td><td>' + x.stock + '</td><td>' + (x.usoPorPizza || 0) + '</td><td style="color:#F59E0B">$' + cp.toLocaleString() + '</td><td><button class="btn btn-secondary btn-sm" onclick="editInsumo(\'' + x.id + '\')">✏️</button> <button class="btn btn-danger btn-sm" onclick="deleteInsumo(\'' + x.id + '\')">🗑️</button></td></tr>';
-            }
-            tb.innerHTML = html;
+// ============================================================
+// INSUMOS
+// ============================================================
+async function renderInsumos() {
+    var insumos = await dbGet('insumos');
+    var costo = 0;
+    for (var i = 0; i < insumos.length; i++) costo += (insumos[i].precio || 0) * (insumos[i].usoPorPizza || 0);
+    var tipos = ['Muzzarella', 'Especial'];
+    var pvMap = { 'Muzzarella': 5000, 'Especial': 7000 };
+    var html = '';
+    for (var i = 0; i < tipos.length; i++) {
+        var pv = pvMap[tipos[i]];
+        var gan = pv - costo;
+        var margen = pv > 0 ? ((gan / pv) * 100).toFixed(1) : 0;
+        html += '<div style="background:#0f0f0f;padding:16px;border-radius:12px"><h4 style="color:#FF6B35;margin-bottom:8px">🍕 ' + tipos[i] + '</h4><p style="color:#666;font-size:13px">Costo: <b style="color:white">$' + costo.toLocaleString() + '</b><br>Venta: <b style="color:white">$' + pv.toLocaleString() + '</b><br>Ganancia: <b style="color:#22C55E">$' + gan.toLocaleString() + '</b> (' + margen + '%)</p></div>';
+    }
+    document.getElementById('costoPizza').innerHTML = html;
+    var tb = document.getElementById('tInsumos');
+    if (insumos.length === 0) { tb.innerHTML = '<tr><td colspan="8" class="es">Sin insumos</td></tr>'; return; }
+    html = '';
+    for (var i = 0; i < insumos.length; i++) {
+        var x = insumos[i];
+        var cp = (x.precio || 0) * (x.usoPorPizza || 0);
+        html += '<tr><td><b>' + x.nombre + '</b></td><td>' + (x.marca || '-') + '</td><td>' + x.unidad + '</td><td>$' + x.precio.toLocaleString() + '</td><td>' + x.stock + '</td><td>' + (x.usoPorPizza || 0) + '</td><td style="color:#F59E0B">$' + cp.toLocaleString() + '</td><td><button class="btn bsm bs" onclick="editInsumo(\'' + x.id + '\')">✏️</button> <button class="btn bsm bd" onclick="deleteInsumo(\'' + x.id + '\')">🗑️</button></td></tr>';
+    }
+    tb.innerHTML = html;
+}
+
+async function saveInsumo() {
+    var id = document.getElementById('iId').value;
+    var d = { id: id || genId(), nombre: document.getElementById('iNombre').value.trim(), marca: document.getElementById('iMarca').value.trim(), unidad: document.getElementById('iUnidad').value, precio: parseFloat(document.getElementById('iPrecio').value), stock: parseFloat(document.getElementById('iStock').value), usoPorPizza: parseFloat(document.getElementById('iUso').value), proveedor: document.getElementById('iProv').value.trim() };
+    if (!d.nombre || !d.precio) { notify('Faltan datos', 'error'); return; }
+    var ok = id ? await dbUpdate('insumos', id, d) : await dbInsert('insumos', d);
+    if (ok) { closeModal('modalInsumo'); clearInsumoForm(); renderInsumos(); notify(id ? 'Actualizado' : 'Registrado'); }
+}
+
+async function editInsumo(id) {
+    var insumos = await dbGet('insumos');
+    var i = null;
+    for (var j = 0; j < insumos.length; j++) { if (insumos[j].id === id) { i = insumos[j]; break; } }
+    if (!i) return;
+    document.getElementById('iId').value = i.id; document.getElementById('iNombre').value = i.nombre; document.getElementById('iMarca').value = i.marca || '';
+    document.getElementById('iUnidad').value = i.unidad; document.getElementById('iPrecio').value = i.precio; document.getElementById('iStock').value = i.stock;
+    document.getElementById('iUso').value = i.usoPorPizza || 0; document.getElementById('iProv').value = i.proveedor || '';
+    document.getElementById('tInsumo').textContent = 'Editar Insumo'; openModal('modalInsumo');
+}
+
+async function deleteInsumo(id) { if (!confirm('¿Eliminar?')) return; if (await dbDelete('insumos', id)) { notify('Eliminado'); renderInsumos(); } }
+
+function clearInsumoForm() {
+    document.getElementById('iId').value = ''; document.getElementById('iNombre').value = ''; document.getElementById('iMarca').value = '';
+    document.getElementById('iPrecio').value = ''; document.getElementById('iStock').value = 0; document.getElementById('iUso').value = 0;
+    document.getElementById('iProv').value = ''; document.getElementById('tInsumo').textContent = 'Nuevo Insumo';
+}
+
+// ============================================================
+// MARCAS
+// ============================================================
+function setCal(v) {
+    var stars = document.querySelectorAll('#mCalidad .st');
+    for (var i = 0; i < stars.length; i++) stars[i].classList.toggle('a', i < v);
+    document.getElementById('mCalVal').value = v;
+}
+
+async function renderMarcas() {
+    var marcas = await dbGet('marcas');
+    var tb = document.getElementById('tMarcas');
+    if (marcas.length === 0) { tb.innerHTML = '<tr><td colspan="7" class="es">Sin marcas</td></tr>'; return; }
+    var html = '';
+    for (var i = 0; i < marcas.length; i++) {
+        var m = marcas[i];
+        var stars = '';
+        for (var s = 1; s <= 5; s++) stars += '<span class="st ' + (s <= m.calidad ? 'a' : '') + '" style="cursor:default">★</span>';
+        html += '<tr><td><b>' + m.nombre + '</b></td><td>' + m.insumoTipo + '</td><td><span class="sr" style="cursor:default">' + stars + '</span></td><td>' + (m.precio ? '$' + m.precio.toLocaleString() : '-') + '</td><td>' + (m.proveedor || '-') + '</td><td>' + (m.notas || '-') + '</td><td><button class="btn bsm bs" onclick="editMarca(\'' + m.id + '\')">✏️</button> <button class="btn bsm bd" onclick="deleteMarca(\'' + m.id + '\')">🗑️</button></td></tr>';
+    }
+    tb.innerHTML = html;
+}
+
+async function saveMarca() {
+    var id = document.getElementById('mId').value;
+    var d = { id: id || genId(), nombre: document.getElementById('mNombre').value.trim(), insumoTipo: document.getElementById('mTipo').value, calidad: parseInt(document.getElementById('mCalVal').value), precio: parseFloat(document.getElementById('mPrecio').value) || 0, proveedor: document.getElementById('mProv').value.trim(), notas: document.getElementById('mNotas').value.trim() };
+    if (!d.nombre) { notify('Nombre obligatorio', 'error'); return; }
+    var ok = id ? await dbUpdate('marcas', id, d) : await dbInsert('marcas', d);
+    if (ok) { closeModal('modalMarca'); clearMarcaForm(); renderMarcas(); notify(id ? 'Actualizada' : 'Registrada'); }
+}
+
+async function editMarca(id) {
+    var marcas = await dbGet('marcas');
+    var m = null;
+    for (var i = 0; i < marcas.length; i++) { if (marcas[i].id === id) { m = marcas[i]; break; } }
+    if (!m) return;
+    document.getElementById('mId').value = m.id; document.getElementById('mNombre').value = m.nombre; document.getElementById('mTipo').value = m.insumoTipo;
+    setCal(m.calidad); document.getElementById('mPrecio').value = m.precio || ''; document.getElementById('mProv').value = m.proveedor || '';
+    document.getElementById('mNotas').value = m.notas || ''; document.getElementById('tMarca').textContent = 'Editar Marca'; openModal('modalMarca');
+}
+
+async function deleteMarca(id) { if (!confirm('¿Eliminar?')) return; if (await dbDelete('marcas', id)) { notify('Eliminada'); renderMarcas(); } }
+
+function clearMarcaForm() {
+    document.getElementById('mId').value = ''; document.getElementById('mNombre').value = ''; setCal(3); document.getElementById('tMarca').textContent = 'Nueva Marca';
+}
+
+// ============================================================
+// DASHBOARD
+// ============================================================
+async function updateDashboard() {
+    var pedidos = await dbGet('pedidos');
+    var clientes = await dbGet('clientes');
+    var pagos = await dbGet('pagos');
+    var insumos = await dbGet('insumos');
+    var mes = new Date().toISOString().substring(0, 7);
+    var pm = pedidos.filter(function(p) { return p.fecha && p.fecha.substring(0, 7) === mes; });
+    var tv = pm.reduce(function(s, p) { return s + p.total; }, 0);
+    var ct = 0;
+    var totalPizzas = 0;
+    for (var i = 0; i < pedidos.length; i++) {
+        for (var j = 0; j < pedidos[i].items.length; j++) { totalPizzas += pedidos[i].items[j].cantidad; }
+    }
+    for (var i = 0; i < insumos.length; i++) { var u = pedidos.reduce(function(s, p) { return s + getTotalItems(p.items) * (insumos[i].usoPorPizza || 0); }, 0); ct += u * insumos[i].precio; }
+    var gan = tv - ct;
+    var td = 0;
+    var pend = pedidos.filter(function(p) { return p.estadoPago !== 'Pagado'; });
+    for (var i = 0; i < pend.length; i++) { var pa = pagos.filter(function(pg) { return pg.pedidoId === pend[i].id; }).reduce(function(s, pg) { return s + pg.monto; }, 0); td += pend[i].total - pa; }
+    var enProceso = 0;
+    for (var i = 0; i < pedidos.length; i++) { if (pedidos[i].estado === 'En proceso') enProceso++; }
+    document.getElementById('kpiPM').textContent = '$' + tv.toLocaleString();
+    document.getElementById('kpiGN').textContent = '$' + gan.toLocaleString();
+    document.getElementById('kpiCL').textContent = clientes.length;
+    document.getElementById('kpiDE').textContent = '$' + Math.max(0, td).toLocaleString();
+    document.getElementById('kpiEP').textContent = enProceso;
+    document.getElementById('kpiPZ').textContent = totalPizzas;
+
+    if (chart1) chart1.destroy();
+    if (chart2) chart2.destroy();
+    var tipos = {};
+    pedidos.forEach(function(p) { p.items.forEach(function(it) { tipos[it.tipo] = (tipos[it.tipo] || 0) + it.subtotal; }); });
+    chart1 = new Chart(document.getElementById('cTipo'), {
+        type: 'bar',
+        data: {
+            labels: Object.keys(tipos),
+            datasets: [{ label: 'Ventas', data: Object.values(tipos), backgroundColor: ['#FF6B35', '#FFD700'], borderRadius: 8 }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#a0a0c0' } }, x: { grid: { display: false }, ticks: { color: '#a0a0c0' } } } }
+    });
+    var canales = {};
+    pedidos.forEach(function(p) { canales[p.canal] = (canales[p.canal] || 0) + p.total; });
+    chart2 = new Chart(document.getElementById('cCanal'), {
+        type: 'doughnut',
+        data: {
+            labels: Object.keys(canales),
+            datasets: [{ data: Object.values(canales), backgroundColor: ['#3B82F6', '#A855F7'] }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: '#a0a0c0' } } } }
+    });
+
+    var dv = document.getElementById('dPedidos');
+    var sorted = pedidos.slice().sort(function(a, b) { return b.fecha > a.fecha ? 1 : -1; }).slice(0, 5);
+    if (sorted.length === 0) { dv.innerHTML = '<tr><td colspan="6" class="es">Sin pedidos</td></tr>'; }
+    else {
+        var html = '';
+        for (var i = 0; i < sorted.length; i++) {
+            var p = sorted[i];
+            var cl = null;
+            for (var j = 0; j < clientes.length; j++) { if (clientes[j].id === p.clienteId) { cl = clientes[j]; break; } }
+            html += '<tr><td>' + fmt(p.fecha) + '</td><td>' + (cl ? cl.nombre : 'N/A') + '</td><td>' + getItemsSummary(p.items) + '</td><td>$' + p.total.toLocaleString() + '</td><td><span class="ba ' + getStatusBadge(p.estado) + '">' + p.estado + '</span></td><td><span class="ba ' + (p.estadoPago === 'Pagado' ? 'ba-p' : 'ba-pn') + '">' + p.estadoPago + '</span></td></tr>';
         }
-        window.renderInsumos = renderInsumos;
+        dv.innerHTML = html;
+    }
+}
 
-        async function saveInsumo() {
-            var id = document.getElementById('insumoId').value;
-            var d = { id: id || genId(), nombre: document.getElementById('insumoNombre').value.trim(), marca: document.getElementById('insumoMarca').value.trim(), unidad: document.getElementById('insumoUnidad').value, precio: parseFloat(document.getElementById('insumoPrecio').value), stock: parseFloat(document.getElementById('insumoStock').value), usoPorPizza: parseFloat(document.getElementById('insumoUsoPizza').value), proveedor: document.getElementById('insumoProveedor').value.trim() };
-            if (!d.nombre || !d.precio) { notify('Faltan datos', 'error'); return; }
-            var ok = id ? await dbUpdate('insumos', id, d) : await dbInsert('insumos', d);
-            if (ok) { closeModal('modalInsumo'); clearInsumoForm(); renderInsumos(); notify(id ? 'Actualizado' : 'Registrado'); }
-        }
-        window.saveInsumo = saveInsumo;
+// ============================================================
+// REPORTES
+// ============================================================
+function showRT(t, btn) {
+    var reports = document.querySelectorAll('[id^="r-"]');
+    for (var i = 0; i < reports.length; i++) reports[i].classList.add('sh');
+    document.getElementById('r-' + t).classList.remove('sh');
+    var tabs = document.querySelectorAll('.tb');
+    for (var i = 0; i < tabs.length; i++) tabs[i].classList.remove('a');
+    btn.classList.add('a');
+    renderReportes();
+}
 
-        async function editInsumo(id) {
-            var insumos = await dbGet('insumos');
-            var i = null;
-            for (var j = 0; j < insumos.length; j++) { if (insumos[j].id === id) { i = insumos[j]; break; } }
-            if (!i) return;
-            document.getElementById('insumoId').value = i.id;
-            document.getElementById('insumoNombre').value = i.nombre;
-            document.getElementById('insumoMarca').value = i.marca || '';
-            document.getElementById('insumoUnidad').value = i.unidad;
-            document.getElementById('insumoPrecio').value = i.precio;
-            document.getElementById('insumoStock').value = i.stock;
-            document.getElementById('insumoUsoPizza').value = i.usoPorPizza || 0;
-            document.getElementById('insumoProveedor').value = i.proveedor || '';
-            document.getElementById('tituloInsumo').textContent = 'Editar Insumo';
-            openModal('modalInsumo');
-        }
-        window.editInsumo = editInsumo;
+async function renderReportes() {
+    var pedidos = await dbGet('pedidos');
+    var clientes = await dbGet('clientes');
+    var insumos = await dbGet('insumos');
+    var meses = {};
+    pedidos.forEach(function(p) { var m = p.fecha ? p.fecha.substring(0, 7) : 'Sin fecha'; meses[m] = (meses[m] || 0) + p.total; });
+    var sk = Object.keys(meses).sort();
+    if (chart3) chart3.destroy();
+    chart3 = new Chart(document.getElementById('cMensual'), {
+        type: 'line',
+        data: {
+            labels: sk,
+            datasets: [{ label: 'Pedidos', data: sk.map(function(m) { return meses[m]; }), borderColor: '#FF6B35', backgroundColor: 'rgba(255,107,53,0.1)', fill: true, tension: 0.4 }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#a0a0c0' } } }, scales: { y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#a0a0c0' } }, x: { grid: { display: false }, ticks: { color: '#a0a0c0' } } } }
+    });
+    var ti = pedidos.reduce(function(s, p) { return s + p.total; }, 0);
+    var ci = 0;
+    var totalItems = 0;
+    pedidos.forEach(function(p) { totalItems += getTotalItems(p.items); });
+    insumos.forEach(function(x) { ci += totalItems * (x.usoPorPizza || 0) * x.precio; });
+    var gn = ti - ci;
+    var mg = ti > 0 ? ((gn / ti) * 100).toFixed(1) : 0;
+    document.getElementById('rentCont').innerHTML = '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:16px"><div style="background:#0f0f0f;padding:16px;border-radius:12px"><p style="color:#666;font-size:12px">Ingresos</p><p style="font-size:24px;font-weight:800;color:white">$' + ti.toLocaleString() + '</p></div><div style="background:#0f0f0f;padding:16px;border-radius:12px"><p style="color:#666;font-size:12px">Costo</p><p style="font-size:24px;font-weight:800;color:#EF4444">$' + ci.toLocaleString() + '</p></div><div style="background:#0f0f0f;padding:16px;border-radius:12px"><p style="color:#666;font-size:12px">Ganancia</p><p style="font-size:24px;font-weight:800;color:#22C55E">$' + gn.toLocaleString() + '</p></div><div style="background:#0f0f0f;padding:16px;border-radius:12px"><p style="color:#666;font-size:12px">Margen</p><p style="font-size:24px;font-weight:800;color:#FFD700">' + mg + '%</p></div></div><div style="height:24px;background:#0f0f0f;border-radius:12px;overflow:hidden"><div style="width:' + mg + '%;height:100%;background:linear-gradient(90deg,#22C55E,#4ADE80);border-radius:12px"></div></div>';
+    var cv = {};
+    pedidos.forEach(function(p) { cv[p.clienteId] = (cv[p.clienteId] || 0) + p.total; });
+    var top = Object.entries(cv).map(function(entry) { var id = entry[0], t = entry[1]; var nombre = 'N/A'; for (var i = 0; i < clientes.length; i++) { if (clientes[i].id === id) { nombre = clientes[i].nombre; break; } } return { n: nombre, t: t }; }).sort(function(a, b) { return b.t - a.t; }).slice(0, 5);
+    if (chart4) chart4.destroy();
+    chart4 = new Chart(document.getElementById('cCliTop'), {
+        type: 'bar',
+        data: {
+            labels: top.map(function(x) { return x.n; }),
+            datasets: [{ label: 'Compras', data: top.map(function(x) { return x.t; }), backgroundColor: ['#FF6B35', '#FF8F5E', '#FFB088', '#FFD0B5', '#FFE8D8'], borderRadius: 8 }]
+        },
+        options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#a0a0c0' } }, y: { grid: { display: false }, ticks: { color: '#a0a0c0' } } } }
+    });
+    var pv = {};
+    pedidos.forEach(function(p) { p.items.forEach(function(it) { pv[it.tipo] = (pv[it.tipo] || 0) + it.cantidad; }); });
+    if (chart5) chart5.destroy();
+    chart5 = new Chart(document.getElementById('cProd'), {
+        type: 'pie',
+        data: {
+            labels: Object.keys(pv),
+            datasets: [{ data: Object.values(pv), backgroundColor: ['#FF6B35', '#FFD700', '#22C55E', '#3B82F6'] }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: '#a0a0c0' } } } }
+    });
+}
 
-        async function deleteInsumo(id) { if (!confirm('¿Eliminar?')) return; if (await dbDelete('insumos', id)) { notify('Eliminado'); renderInsumos(); } }
-        window.deleteInsumo = deleteInsumo;
+// ============================================================
+// EXPORT / IMPORT
+// ============================================================
+async function exportData() {
+    var d = { clientes: await dbGet('clientes'), pedidos: await dbGet('pedidos'), insumos: await dbGet('insumos'), marcas: await dbGet('marcas'), pagos: await dbGet('pagos') };
+    var blob = new Blob([JSON.stringify(d, null, 2)], { type: 'application/json' });
+    var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'metele_backup_' + new Date().toISOString().split('T')[0] + '.json'; a.click();
+    URL.revokeObjectURL(a.href); notify('Datos exportados');
+}
 
-        function clearInsumoForm() {
-            document.getElementById('insumoId').value = '';
-            document.getElementById('insumoNombre').value = '';
-            document.getElementById('insumoMarca').value = '';
-            document.getElementById('insumoPrecio').value = '';
-            document.getElementById('insumoStock').value = 0;
-            document.getElementById('insumoUsoPizza').value = 0;
-            document.getElementById('insumoProveedor').value = '';
-            document.getElementById('tituloInsumo').textContent = 'Nuevo Insumo';
-        }
+async function importData(e) {
+    var file = e.target.files[0]; if (!file) return;
+    var reader = new FileReader();
+    reader.onload = async function(ev) {
+        try {
+            var d = JSON.parse(ev.target.result);
+            if (d.clientes) for (var i = 0; i < d.clientes.length; i++) await dbInsert('clientes', d.clientes[i]);
+            if (d.pedidos) for (var i = 0; i < d.pedidos.length; i++) await dbInsert('pedidos', d.pedidos[i]);
+            if (d.insumos) for (var i = 0; i < d.insumos.length; i++) await dbInsert('insumos', d.insumos[i]);
+            if (d.marcas) for (var i = 0; i < d.marcas.length; i++) await dbInsert('marcas', d.marcas[i]);
+            if (d.pagos) for (var i = 0; i < d.pagos.length; i++) await dbInsert('pagos', d.pagos[i]);
+            notify('Importado'); updateDashboard();
+        } catch (err) { notify('Error', 'error'); }
+    };
+    reader.readAsText(file); e.target.value = '';
+}
 
-        window.setCalidad = function(v) {
-            var stars = document.querySelectorAll('#marcaCalidad .star');
-            for (var i = 0; i < stars.length; i++) stars[i].classList.toggle('active', i < v);
-            document.getElementById('marcaCalidadVal').value = v;
-        };
+window.copySQL = function() {
+    navigator.clipboard.writeText('ALTER TABLE pedidos ADD COLUMN IF NOT EXISTS items TEXT;');
+    notify('SQL copiado');
+};
 
-        async function renderMarcas() {
-            var marcas = await dbGet('marcas');
-            var tb = document.getElementById('tablaMarcas');
-            if (marcas.length === 0) { tb.innerHTML = '<tr><td colspan="7" class="empty-state">Sin marcas</td></tr>'; return; }
-            var html = '';
-            for (var i = 0; i < marcas.length; i++) {
-                var m = marcas[i];
-                var stars = '';
-                for (var s = 1; s <= 5; s++) stars += '<span class="star ' + (s <= m.calidad ? 'active' : '') + '" style="cursor:default;">★</span>';
-                html += '<tr><td><b>' + m.nombre + '</b></td><td>' + m.insumoTipo + '</td><td><span class="star-rating" style="cursor:default">' + stars + '</span> <span class="badge badge-calidad-' + m.calidad + '">' + m.calidad + '/5</span></td><td>' + (m.precio ? '$' + m.precio.toLocaleString() : '-') + '</td><td>' + (m.proveedor || '-') + '</td><td>' + (m.notas || '-') + '</td><td><button class="btn btn-secondary btn-sm" onclick="editMarca(\'' + m.id + '\')">✏️</button> <button class="btn btn-danger btn-sm" onclick="deleteMarca(\'' + m.id + '\')">🗑️</button></td></tr>';
-            }
-            tb.innerHTML = html;
-        }
-        window.renderMarcas = renderMarcas;
+// ============================================================
+// SEED
+// ============================================================
+async function seed() {
+    var clientes = await dbGet('clientes');
+    if (clientes.length > 0) return;
+    var ids = [genId(), genId(), genId()];
+    await dbInsert('clientes', { id: ids[0], nombre: 'Almacén Don Pepe', tipo: 'Almacén', telefono: '11-1234-5678', direccion: 'San Martín 1234', notas: 'Lunes y Jueves' });
+    await dbInsert('clientes', { id: ids[1], nombre: 'Almacén La Esquina', tipo: 'Almacén', telefono: '11-9876-5432', direccion: 'Rivadavia 567', notas: 'Viernes' });
+    await dbInsert('clientes', { id: ids[2], nombre: 'María García', tipo: 'Cliente Final', telefono: '11-5555-1234', direccion: 'Belgrano 890' });
+    await dbInsert('insumos', { id: genId(), nombre: 'Harina 000', marca: 'Cocinero', unidad: 'kg', precio: 1500, stock: 20, usoPorPizza: 0.3, proveedor: 'Mayorista' });
+    await dbInsert('insumos', { id: genId(), nombre: 'Muzzarella', marca: 'La Serenísima', unidad: 'kg', precio: 8000, stock: 10, usoPorPizza: 0.2 });
+    await dbInsert('insumos', { id: genId(), nombre: 'Salsa Tomate', marca: 'Arcor', unidad: 'kg', precio: 2500, stock: 8, usoPorPizza: 0.05 });
+    await dbInsert('marcas', { id: genId(), nombre: 'Cocinero', insumoTipo: 'Masa', calidad: 4, precio: 1500, proveedor: 'Mayorista', notas: 'Buena relación precio-calidad' });
+    await dbInsert('marcas', { id: genId(), nombre: 'La Serenísima', insumoTipo: 'Queso', calidad: 5, precio: 8000, notas: 'La mejor muzzarella' });
+    await new Promise(function(r) { setTimeout(r, 500); });
+    var c = await dbGet('clientes');
+    if (c.length >= 3) {
+        var p1 = genId(), p2 = genId(), p3 = genId(), p4 = genId(), p5 = genId();
+        await dbInsert('pedidos', { id: p1, clienteId: c[0].id, items: [{ tipo: 'Muzzarella', cantidad: 10, precioUnitario: 5000, subtotal: 50000 }], total: 50000, canal: 'Almacén', estado: 'Entregado', estadoPago: 'Pagado', fechaPagoEstimado: null, fecha: '2026-05-01' });
+        await dbInsert('pedidos', { id: p2, clienteId: c[0].id, items: [{ tipo: 'Muzzarella', cantidad: 3, precioUnitario: 5000, subtotal: 15000 }, { tipo: 'Especial', cantidad: 2, precioUnitario: 7000, subtotal: 14000 }], total: 29000, canal: 'Almacén', estado: 'En proceso', estadoPago: 'Pendiente', fechaPagoEstimado: '2026-05-15', fecha: '2026-05-04' });
+        await dbInsert('pedidos', { id: p3, clienteId: c[1].id, items: [{ tipo: 'Muzzarella', cantidad: 8, precioUnitario: 5000, subtotal: 40000 }], total: 40000, canal: 'Almacén', estado: 'Entregado', estadoPago: 'Pagado', fechaPagoEstimado: null, fecha: '2026-05-05' });
+        await dbInsert('pedidos', { id: p4, clienteId: c[2].id, items: [{ tipo: 'Especial', cantidad: 2, precioUnitario: 6000, subtotal: 12000 }], total: 12000, canal: 'Cliente Final', estado: 'Entregado', estadoPago: 'Pagado', fechaPagoEstimado: null, fecha: '2026-05-08' });
+        await dbInsert('pedidos', { id: p5, clienteId: c[2].id, items: [{ tipo: 'Especial', cantidad: 1, precioUnitario: 7500, subtotal: 7500 }], total: 7500, canal: 'Cliente Final', estado: 'Entregado', estadoPago: 'Pagado', fechaPagoEstimado: null, fecha: '2026-05-10' });
+        await dbInsert('pagos', { id: genId(), pedidoId: p1, monto: 50000, metodo: 'Transferencia', fecha: '2026-05-01' });
+        await dbInsert('pagos', { id: genId(), pedidoId: p3, monto: 40000, metodo: 'Efectivo', fecha: '2026-05-05' });
+        await dbInsert('pagos', { id: genId(), pedidoId: p4, monto: 12000, metodo: 'MercadoPago', fecha: '2026-05-08' });
+        await dbInsert('pagos', { id: genId(), pedidoId: p5, monto: 7500, metodo: 'Efectivo', fecha: '2026-05-10' });
+    }
+    notify('¡Bienvenido a Metele!', 'info');
+}
 
-        async function saveMarca() {
-            var id = document.getElementById('marcaId').value;
-            var d = { id: id || genId(), nombre: document.getElementById('marcaNombre').value.trim(), insumoTipo: document.getElementById('marcaInsumoTipo').value, calidad: parseInt(document.getElementById('marcaCalidadVal').value), precio: parseFloat(document.getElementById('marcaPrecio').value) || 0, proveedor: document.getElementById('marcaProveedor').value.trim(), notas: document.getElementById('marcaNotas').value.trim() };
-            if (!d.nombre) { notify('Nombre obligatorio', 'error'); return; }
-            var ok = id ? await dbUpdate('marcas', id, d) : await dbInsert('marcas', d);
-            if (ok) { closeModal('modalMarca'); clearMarcaForm(); renderMarcas(); notify(id ? 'Actualizada' : 'Registrada'); }
-        }
-        window.saveMarca = saveMarca;
+seed().then(function() {});
 
-        async function editMarca(id) {
-            var marcas = await dbGet('marcas');
-            var m = null;
-            for (var i = 0; i < marcas.length; i++) { if (marcas[i].id === id) { m = marcas[i]; break; } }
-            if (!m) return;
-            document.getElementById('marcaId').value = m.id;
-            document.getElementById('marcaNombre').value = m.nombre;
-            document.getElementById('marcaInsumoTipo').value = m.insumoTipo;
-            setCalidad(m.calidad);
-            document.getElementById('marcaPrecio').value = m.precio || '';
-            document.getElementById('marcaProveedor').value = m.proveedor || '';
-            document.getElementById('marcaNotas').value = m.notas || '';
-            document.getElementById('tituloMarca').textContent = 'Editar Marca';
-            openModal('modalMarca');
-        }
-        window.editMarca = editMarca;
-
-        async function deleteMarca(id) { if (!confirm('¿Eliminar?')) return; if (await dbDelete('marcas', id)) { notify('Eliminada'); renderMarcas(); } }
-        window.deleteMarca = deleteMarca;
-
-        function clearMarcaForm() {
-            document.getElementById('marcaId').value = '';
-            document.getElementById('marcaNombre').value = '';
-            setCalidad(3);
-            document.getElementById('tituloMarca').textContent = 'Nueva Marca';
-        }
-
-        var chartPedidosTipo = null;
-        var chartPedidosCanal = null;
-
-        async function updateDashboard() {
-            var pedidos = await dbGet('pedidos');
-            var clientes = await dbGet('clientes');
-            var pagos = await dbGet('pagos');
-            var insumos = await dbGet('insumos');
-            var mes = new Date().toISOString().substring(0, 7);
-            var pm = pedidos.filter(function(p) { return p.fecha && p.fecha.substring(0, 7) === mes; });
-            var tv = pm.reduce(function(s, p) { return s + p.total; }, 0);
-            var ct = 0;
-            var totalPizzas = 0;
-            for (var i = 0; i < pedidos.length; i++) {
-                for (var j = 0; j < pedidos[i].items.length; j++) { totalPizzas += pedidos[i].items[j].cantidad; }
-            }
-            for (var i = 0; i < insumos.length; i++) { var u = pedidos.reduce(function(s, p) { return s + getTotalItems(p.items) * (insumos[i].usoPorPizza || 0); }, 0); ct += u * insumos[i].precio; }
-            var gan = tv - ct;
-            var td = 0;
-            var pend = pedidos.filter(function(p) { return p.estadoPago !== 'Pagado'; });
-            for (var i = 0; i < pend.length; i++) { var pa = pagos.filter(function(pg) { return pg.pedidoId === pend[i].id; }).reduce(function(s, pg) { return s + pg.monto; }, 0); td += pend[i].total - pa; }
-            var enProceso = 0;
-            for (var i = 0; i < pedidos.length; i++) { if (pedidos[i].estado === 'En proceso') enProceso++; }
-            document.getElementById('kpiPedidosMes').textContent = '$' + tv.toLocaleString();
-            document.getElementById('kpiGanancia').textContent = '$' + gan.toLocaleString();
-            document.getElementById('kpiClientes').textContent = clientes.length;
-            document.getElementById('kpiDeudas').textContent = '$' + Math.max(0, td).toLocaleString();
-            document.getElementById('kpiEnProceso').textContent = enProceso;
-            document.getElementById('kpiPizzas').textContent = totalPizzas;
-
-            if (chartPedidosTipo) chartPedidosTipo.destroy();
-            if (chartPedidosCanal) chartPedidosCanal.destroy();
-            var tipos = {};
-            pedidos.forEach(function(p) { p.items.forEach(function(it) { tipos[it.tipo] = (tipos[it.tipo] || 0) + it.subtotal; }); });
-            chartPedidosTipo = new Chart(document.getElementById('chartPedidosTipo'), {
-                type: 'bar',
-                 {
-                    labels: Object.keys(tipos),
-                    datasets: [{ label: 'Ventas',  Object.values(tipos), backgroundColor: ['#FF6B35', '#FFD700'], borderRadius: 8 }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: { y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#a0a0c0' } }, x: { grid: { display: false }, ticks: { color: '#a0a0c0' } } }
-                }
-            });
-            var canales = {};
-            pedidos.forEach(function(p) { canales[p.canal] = (canales[p.canal] || 0) + p.total; });
-            chartPedidosCanal = new Chart(document.getElementById('chartPedidosCanal'), {
-                type: 'doughnut',
-                 {
-                    labels: Object.keys(canales),
-                    datasets: [{  Object.values(canales), backgroundColor: ['#3B82F6', '#A855F7'] }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { position: 'bottom', labels: { color: '#a0a0c0' } } }
-                }
-            });
-
-            var dv = document.getElementById('dashboardPedidos');
-            var sorted = pedidos.slice().sort(function(a, b) { return b.fecha > a.fecha ? 1 : -1; }).slice(0, 5);
-            if (sorted.length === 0) { dv.innerHTML = '<tr><td colspan="6" class="empty-state">Sin pedidos</td></tr>'; }
-            else {
-                var html = '';
-                for (var i = 0; i < sorted.length; i++) {
-                    var p = sorted[i];
-                    var cl = null;
-                    for (var j = 0; j < clientes.length; j++) { if (clientes[j].id === p.clienteId) { cl = clientes[j]; break; } }
-                    html += '<tr><td>' + fmt(p.fecha) + '</td><td>' + (cl ? cl.nombre : 'N/A') + '</td><td>' + getItemsSummary(p.items) + '</td><td>$' + p.total.toLocaleString() + '</td><td><span class="badge ' + getStatusBadge(p.estado) + '">' + p.estado + '</span></td><td><span class="badge ' + (p.estadoPago === 'Pagado' ? 'badge-pagado' : 'badge-pendiente') + '">' + p.estadoPago + '</span></td></tr>';
-                }
-                dv.innerHTML = html;
-            }
-        }
-        window.updateDashboard = updateDashboard;
-
-        var chartMensuales = null;
-        var chartClientesTop = null;
-        var chartProductos = null;
-
-        window.showReportTab = function(t, btn) {
-            var reports = document.querySelectorAll('[id^="report-"]');
-            for (var i = 0; i < reports.length; i++) reports[i].classList.add('section-hidden');
-            document.getElementById('report-' + t).classList.remove('section-hidden');
-            var tabs = document.querySelectorAll('.tab-btn');
-            for (var i = 0; i < tabs.length; i++) tabs[i].classList.remove('active');
-            btn.classList.add('active');
-            renderReportes();
-        };
-
-        async function renderReportes() {
-            var pedidos = await dbGet('pedidos');
-            var clientes = await dbGet('clientes');
-            var insumos = await dbGet('insumos');
-            var meses = {};
-            pedidos.forEach(function(p) { var m = p.fecha ? p.fecha.substring(0, 7) : 'Sin fecha'; meses[m] = (meses[m] || 0) + p.total; });
-            var sk = Object.keys(meses).sort();
-            if (chartMensuales) chartMensuales.destroy();
-            chartMensuales = new Chart(document.getElementById('chartMensuales'), {
-                type: 'line',
-                 {
-                    labels: sk,
-                    datasets: [{ label: 'Pedidos',  sk.map(function(m) { return meses[m]; }), borderColor: '#FF6B35', backgroundColor: 'rgba(255,107,53,0.1)', fill: true, tension: 0.4 }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { labels: { color: '#a0a0c0' } } },
-                    scales: { y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#a0a0c0' } }, x: { grid: { display: false }, ticks: { color: '#a0a0c0' } } }
-                }
-            });
-            var ti = pedidos.reduce(function(s, p) { return s + p.total; }, 0);
-            var ci = 0;
-            var totalItems = 0;
-            pedidos.forEach(function(p) { totalItems += getTotalItems(p.items); });
-            insumos.forEach(function(x) { ci += totalItems * (x.usoPorPizza || 0) * x.precio; });
-            var gn = ti - ci;
-            var mg = ti > 0 ? ((gn / ti) * 100).toFixed(1) : 0;
-            document.getElementById('rentabilidadContent').innerHTML = '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:16px;"><div style="background:#0f0f0f;padding:16px;border-radius:12px;"><p style="color:#666;font-size:12px;">Ingresos</p><p style="font-size:24px;font-weight:800;color:white">$' + ti.toLocaleString() + '</p></div><div style="background:#0f0f0f;padding:16px;border-radius:12px;"><p style="color:#666;font-size:12px;">Costo</p><p style="font-size:24px;font-weight:800;color:#EF4444">$' + ci.toLocaleString() + '</p></div><div style="background:#0f0f0f;padding:16px;border-radius:12px;"><p style="color:#666;font-size:12px;">Ganancia</p><p style="font-size:24px;font-weight:800;color:#22C55E">$' + gn.toLocaleString() + '</p></div><div style="background:#0f0f0f;padding:16px;border-radius:12px;"><p style="color:#666;font-size:12px;">Margen</p><p style="font-size:24px;font-weight:800;color:#FFD700">' + mg + '%</p></div></div><div style="height:24px;background:#0f0f0f;border-radius:12px;overflow:hidden;"><div style="width:' + mg + '%;height:100%;background:linear-gradient(90deg,#22C55E,#4ADE80);border-radius:12px;"></div></div>';
-            var cv = {};
-            pedidos.forEach(function(p) { cv[p.clienteId] = (cv[p.clienteId] || 0) + p.total; });
-            var top = Object.entries(cv).map(function(entry) { var id = entry[0], t = entry[1]; var nombre = 'N/A'; for (var i = 0; i < clientes.length; i++) { if (clientes[i].id === id) { nombre = clientes[i].nombre; break; } } return { n: nombre, t: t }; }).sort(function(a, b) { return b.t - a.t; }).slice(0, 5);
-            if (chartClientesTop) chartClientesTop.destroy();
-            chartClientesTop = new Chart(document.getElementById('chartClientesTop'), {
-                type: 'bar',
-                 {
-                    labels: top.map(function(x) { return x.n; }),
-                    datasets: [{ label: 'Compras',  top.map(function(x) { return x.t; }), backgroundColor: ['#FF6B35', '#FF8F5E', '#FFB088', '#FFD0B5', '#FFE8D8'], borderRadius: 8 }]
-                },
-                options: {
-                    indexAxis: 'y',
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: { x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#a0a0c0' } }, y: { grid: { display: false }, ticks: { color: '#a0a0c0' } } }
-                }
-            });
-            var pv = {};
-            pedidos.forEach(function(p) { p.items.forEach(function(it) { pv[it.tipo] = (pv[it.tipo] || 0) + it.cantidad; }); });
-            if (chartProductos) chartProductos.destroy();
-            chartProductos = new Chart(document.getElementById('chartProductos'), {
-                type: 'pie',
-                 {
-                    labels: Object.keys(pv),
-                    datasets: [{  Object.values(pv), backgroundColor: ['#FF6B35', '#FFD700', '#22C55E', '#3B82F6'] }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { position: 'bottom', labels: { color: '#a0a0c0' } } }
-                }
-            });
-        }
-        window.renderReportes = renderReportes;
-
-        async function exportData() {
-            var d = { clientes: await dbGet('clientes'), pedidos: await dbGet('pedidos'), insumos: await dbGet('insumos'), marcas: await dbGet('marcas'), pagos: await dbGet('pagos') };
-            var blob = new Blob([JSON.stringify(d, null, 2)], { type: 'application/json' });
-            var a = document.createElement('a');
-            a.href = URL.createObjectURL(blob);
-            a.download = 'metele_backup_' + new Date().toISOString().split('T')[0] + '.json';
-            a.click();
-            URL.revokeObjectURL(a.href);
-            notify('Datos exportados');
-        }
-        window.exportData = exportData;
-
-        async function importData(e) {
-            var file = e.target.files[0];
-            if (!file) return;
-            var reader = new FileReader();
-            reader.onload = async function(ev) {
-                try {
-                    var d = JSON.parse(ev.target.result);
-                    if (d.clientes) for (var i = 0; i < d.clientes.length; i++) await dbInsert('clientes', d.clientes[i]);
-                    if (d.pedidos) for (var i = 0; i < d.pedidos.length; i++) await dbInsert('pedidos', d.pedidos[i]);
-                    if (d.insumos) for (var i = 0; i < d.insumos.length; i++) await dbInsert('insumos', d.insumos[i]);
-                    if (d.marcas) for (var i = 0; i < d.marcas.length; i++) await dbInsert('marcas', d.marcas[i]);
-                    if (d.pagos) for (var i = 0; i < d.pagos.length; i++) await dbInsert('pagos', d.pagos[i]);
-                    notify('Importado');
-                    updateDashboard();
-                } catch (err) { notify('Error al importar', 'error'); }
-            };
-            reader.readAsText(file);
-            e.target.value = '';
-        }
-        window.importData = importData;
-
-        window.copySQL = function() {
-            navigator.clipboard.writeText('ALTER TABLE pedidos ADD COLUMN IF NOT EXISTS items TEXT;');
-            notify('SQL copiado al portapapeles');
-        };
-
-        async function seed() {
-            var clientes = await dbGet('clientes');
-            if (clientes.length > 0) return;
-            var ids = [genId(), genId(), genId()];
-            await dbInsert('clientes', { id: ids[0], nombre: 'Almacén Don Pepe', tipo: 'Almacén', telefono: '11-1234-5678', direccion: 'San Martín 1234', notas: 'Lunes y Jueves' });
-            await dbInsert('clientes', { id: ids[1], nombre: 'Almacén La Esquina', tipo: 'Almacén', telefono: '11-9876-5432', direccion: 'Rivadavia 567', notas: 'Viernes' });
-            await dbInsert('clientes', { id: ids[2], nombre: 'María García', tipo: 'Cliente Final', telefono: '11-5555-1234', direccion: 'Belgrano 890' });
-            await dbInsert('insumos', { id: genId(), nombre: 'Harina 000', marca: 'Cocinero', unidad: 'kg', precio: 1500, stock: 20, usoPorPizza: 0.3, proveedor: 'Mayorista' });
-            await dbInsert('insumos', { id: genId(), nombre: 'Muzzarella', marca: 'La Serenísima', unidad: 'kg', precio: 8000, stock: 10, usoPorPizza: 0.2 });
-            await dbInsert('insumos', { id: genId(), nombre: 'Salsa Tomate', marca: 'Arcor', unidad: 'kg', precio: 2500, stock: 8, usoPorPizza: 0.05 });
-            await dbInsert('marcas', { id: genId(), nombre: 'Cocinero', insumoTipo: 'Masa', calidad: 4, precio: 1500, proveedor: 'Mayorista', notas: 'Buena relación precio-calidad' });
-            await dbInsert('marcas', { id: genId(), nombre: 'La Serenísima', insumoTipo: 'Queso', calidad: 5, precio: 8000, notas: 'La mejor muzzarella' });
-            await new Promise(function(r) { setTimeout(r, 500); });
-            var c = await dbGet('clientes');
-            if (c.length >= 3) {
-                var p1 = genId(), p2 = genId(), p3 = genId(), p4 = genId(), p5 = genId();
-                await dbInsert('pedidos', { id: p1, clienteId: c[0].id, items: [{ tipo: 'Muzzarella', cantidad: 10, precioUnitario: 5000, subtotal: 50000 }], total: 50000, canal: 'Almacén', estado: 'Entregado', estadoPago: 'Pagado', fechaPagoEstimado: null, fecha: '2026-05-01' });
-                await dbInsert('pedidos', { id: p2, clienteId: c[0].id, items: [{ tipo: 'Muzzarella', cantidad: 3, precioUnitario: 5000, subtotal: 15000 }, { tipo: 'Especial', cantidad: 2, precioUnitario: 7000, subtotal: 14000 }], total: 29000, canal: 'Almacén', estado: 'En proceso', estadoPago: 'Pendiente', fechaPagoEstimado: '2026-05-15', fecha: '2026-05-04' });
-                await dbInsert('pedidos', { id: p3, clienteId: c[1].id, items: [{ tipo: 'Muzzarella', cantidad: 8, precioUnitario: 5000, subtotal: 40000 }], total: 40000, canal: 'Almacén', estado: 'Entregado', estadoPago: 'Pagado', fechaPagoEstimado: null, fecha: '2026-05-05' });
-                await dbInsert('pedidos', { id: p4, clienteId: c[2].id, items: [{ tipo: 'Especial', cantidad: 2, precioUnitario: 6000, subtotal: 12000 }], total: 12000, canal: 'Cliente Final', estado: 'Entregado', estadoPago: 'Pagado', fechaPagoEstimado: null, fecha: '2026-05-08' });
-                await dbInsert('pedidos', { id: p5, clienteId: c[2].id, items: [{ tipo: 'Especial', cantidad: 1, precioUnitario: 7500, subtotal: 7500 }], total: 7500, canal: 'Cliente Final', estado: 'Entregado', estadoPago: 'Pagado', fechaPagoEstimado: null, fecha: '2026-05-10' });
-                await dbInsert('pagos', { id: genId(), pedidoId: p1, monto: 50000, metodo: 'Transferencia', fecha: '2026-05-01' });
-                await dbInsert('pagos', { id: genId(), pedidoId: p3, monto: 40000, metodo: 'Efectivo', fecha: '2026-05-05' });
-                await dbInsert('pagos', { id: genId(), pedidoId: p4, monto: 12000, metodo: 'MercadoPago', fecha: '2026-05-08' });
-                await dbInsert('pagos', { id: genId(), pedidoId: p5, monto: 7500, metodo: 'Efectivo', fecha: '2026-05-10' });
-            }
-            notify('¡Bienvenido a Metele!', 'info');
-        }
-
-        seed().then(function() {});
-
-    })();
-    </script>
+// Event listeners para Enter en login
+document.getElementById('loginUser').addEventListener('keydown', function(e) { if (e.key === 'Enter') doLogin(); });
+document.getElementById('loginPass').addEventListener('keydown', function(e) { if (e.key === 'Enter') doLogin(); });
+</script>
 </body>
 </html>
 
