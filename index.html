@@ -46,7 +46,6 @@
         .btn-success { background: linear-gradient(135deg, #22C55E, #4ADE80); color: white; }
         .btn-danger { background: linear-gradient(135deg, #EF4444, #F87171); color: white; }
         .btn-sm { padding: 6px 12px; font-size: 12px; border-radius: 8px; }
-        .btn-icon { width: 32px; height: 32px; padding: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: 8px; font-size: 16px; cursor: pointer; border: none; }
         .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); z-index: 100; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
         .modal-overlay.active { opacity: 1; pointer-events: all; }
         .modal { background: #1a1a2e; border: 1px solid #2a2a4a; border-radius: 20px; width: 90%; max-width: 650px; max-height: 90vh; overflow-y: auto; }
@@ -60,7 +59,7 @@
         .item-row { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr auto; gap: 8px; align-items: end; margin-bottom: 8px; padding: 12px; background: #0f0f0f; border-radius: 10px; border: 1px solid #2a2a4a; }
         .item-row label { font-size: 11px; color: #666; display: block; margin-bottom: 4px; }
         .item-row .form-input, .item-row .form-select { padding: 8px 10px; font-size: 13px; }
-        .item-subtotal { font-weight: 700; color: #FF6B35; text-align: center; padding-top: 20px; }
+        .item-subtotal { font-weight: 700; color: #FF6B35; text-align: center; padding-top: 20px; font-size: 14px; }
         .remove-item { background: none; border: none; color: #EF4444; cursor: pointer; font-size: 18px; padding-top: 20px; }
         .remove-item:hover { color: #F87171; }
         .table-container { overflow-x: auto; }
@@ -76,7 +75,7 @@
         .badge-cliente { background: rgba(168,85,247,0.15); color: #A855F7; }
         .badge-proceso { background: rgba(59,130,246,0.15); color: #3B82F6; }
         .badge-entregado { background: rgba(34,197,94,0.15); color: #22C55E; }
-        .badge-item { background: rgba(255,107,53,0.1); color: #FF6B35; font-size: 10px; padding: 2px 6px; border-radius: 4px; margin: 1px; }
+        .badge-item { background: rgba(255,107,53,0.1); color: #FF6B35; font-size: 10px; padding: 2px 6px; border-radius: 4px; margin: 1px; display: inline-block; }
         .star-rating { display: flex; gap: 2px; cursor: pointer; }
         .star { font-size: 20px; color: #444; transition: color 0.2s; }
         .star.active { color: #FFD700; }
@@ -98,13 +97,11 @@
         .whatsapp-tip { background: linear-gradient(135deg, #25D366, #128C7E); color: white; border-radius: 12px; padding: 16px; margin: 12px 0; }
         .empty-state { text-align: center; padding: 40px; color: #a0a0c0; }
         .hamburger { display: none; position: fixed; top: 16px; left: 16px; z-index: 60; background: #1a1a2e; border: 1px solid #2a2a4a; border-radius: 10px; padding: 8px; cursor: pointer; }
-        .items-summary { display: flex; flex-wrap: wrap; gap: 4px; }
         @media (max-width: 768px) {
             .sidebar { transform: translateX(-260px); transition: transform 0.3s; }
             .sidebar.open { transform: translateX(0); }
             .main-content { margin-left: 0 !important; }
             .hamburger { display: block; }
-            .item-row { grid-template-columns: 1fr 1fr; }
         }
     </style>
 </head>
@@ -143,7 +140,7 @@
             <div class="nav-item" data-section="clientes" onclick="showSection('clientes')"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg> Clientes</div>
             <div class="nav-item" data-section="deudas" onclick="showSection('deudas')"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg> Deudas y Pagos</div>
             <div class="nav-item" data-section="insumos" onclick="showSection('insumos')"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg> Insumos y Costos</div>
-            <div class="nav-item" data-section="marcas" onclick="showSection('marcas')"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg> Registro de Marcas</div>
+            <div class="nav-item" data-section="marcas" onclick="showSection('marcas')"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg> Marcas</div>
             <div class="nav-item" data-section="reportes" onclick="showSection('reportes')"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg> Reportes</div>
             <div class="nav-item" data-section="guia" onclick="showSection('guia')"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg> Gu&iacute;a</div>
         </nav>
@@ -164,19 +161,19 @@
                     <div><h2 class="font-display" style="font-size: 28px; color: white; margin-bottom: 4px;">Dashboard</h2><p style="color: #666;">Resumen general de pedidos</p></div>
                     <button class="btn btn-primary" onclick="openModal('modalPedido')" style="font-size: 15px; padding: 12px 24px;">➕ Nuevo Pedido</button>
                 </div>
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;">
-                    <div class="card kpi-card orange"><p style="font-size: 12px; color: #666;">Pedidos del Mes</p><p id="kpiPedidosMes" style="font-size: 32px; font-weight: 800; color: white;">$0</p></div>
-                    <div class="card kpi-card green"><p style="font-size: 12px; color: #666;">Ganancia Neta</p><p id="kpiGanancia" style="font-size: 32px; font-weight: 800; color: #22C55E;">$0</p></div>
-                    <div class="card kpi-card blue"><p style="font-size: 12px; color: #666;">Clientes</p><p id="kpiClientes" style="font-size: 32px; font-weight: 800; color: white;">0</p></div>
-                    <div class="card kpi-card yellow"><p style="font-size: 12px; color: #666;">Deudas</p><p id="kpiDeudas" style="font-size: 32px; font-weight: 800; color: #F59E0B;">$0</p></div>
-                    <div class="card kpi-card purple"><p style="font-size: 12px; color: #666;">En Proceso</p><p id="kpiEnProceso" style="font-size: 32px; font-weight: 800; color: #A855F7;">0</p></div>
-                    <div class="card kpi-card red"><p style="font-size: 12px; color: #666;">Pizzas Vendidas</p><p id="kpiPizzas" style="font-size: 32px; font-weight: 800; color: white;">0</p></div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 24px;">
+                    <div class="card kpi-card orange"><p style="font-size: 12px; color: #666;">Pedidos del Mes</p><p id="kpiPedidosMes" style="font-size: 28px; font-weight: 800; color: white;">$0</p></div>
+                    <div class="card kpi-card green"><p style="font-size: 12px; color: #666;">Ganancia Neta</p><p id="kpiGanancia" style="font-size: 28px; font-weight: 800; color: #22C55E;">$0</p></div>
+                    <div class="card kpi-card blue"><p style="font-size: 12px; color: #666;">Clientes</p><p id="kpiClientes" style="font-size: 28px; font-weight: 800; color: white;">0</p></div>
+                    <div class="card kpi-card yellow"><p style="font-size: 12px; color: #666;">Deudas</p><p id="kpiDeudas" style="font-size: 28px; font-weight: 800; color: #F59E0B;">$0</p></div>
+                    <div class="card kpi-card purple"><p style="font-size: 12px; color: #666;">En Proceso</p><p id="kpiEnProceso" style="font-size: 28px; font-weight: 800; color: #A855F7;">0</p></div>
+                    <div class="card kpi-card red"><p style="font-size: 12px; color: #666;">Pizzas Vendidas</p><p id="kpiPizzas" style="font-size: 28px; font-weight: 800; color: white;">0</p></div>
                 </div>
                 <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-bottom: 24px;">
                     <div class="card"><h3 style="color: white; margin-bottom: 16px;">📊 Ventas por Tipo</h3><div class="chart-container"><canvas id="chartPedidosTipo"></canvas></div></div>
                     <div class="card"><h3 style="color: white; margin-bottom: 16px;">🚚 Por Canal</h3><div class="chart-container"><canvas id="chartPedidosCanal"></canvas></div></div>
                 </div>
-                <div class="card"><h3 style="color: white; margin-bottom: 16px;">📋 Últimos Pedidos</h3><div class="table-container"><table><thead><tr><th>Fecha</th><th>Cliente</th><th>Items</th><th>Total</th><th>Estado</th><th>Pago</th></tr></thead><tbody id="dashboardPedidos"></tbody></table></div></div>
+                <div class="card"><h3 style="color: white; margin-bottom: 16px;">📋 Últimos Pedidos</h3><div class="table-container"><table><thead><tr><th>Fecha</th><th>Cliente</th><th>Productos</th><th>Total</th><th>Estado</th><th>Pago</th></tr></thead><tbody id="dashboardPedidos"></tbody></table></div></div>
             </div>
         </section>
         <section id="section-pedidos" class="section-hidden">
@@ -241,10 +238,10 @@
             <div style="padding: 24px;">
                 <h2 class="font-display" style="font-size: 28px; color: white; margin-bottom: 24px;">💡 Gu&iacute;a</h2>
                 <div class="tip-card"><h4>📋 Estados del Pedido</h4><ul><li><strong style="color:#F59E0B;">Pendiente:</strong> Recibido, a&uacute;n no se prepara.</li><li><strong style="color:#3B82F6;">En proceso:</strong> Preparando/horneando.</li><li><strong style="color:#22C55E;">Entregado:</strong> Entregado al cliente.</li></ul></div>
-                <div class="tip-card"><h4>💰 Control Financiero</h4><ul><li><strong style="color:white;">Registro diario</strong> de cada pedido.</li><li><strong style="color:white;">Separa cajas:</strong> insumos vs ganancias.</li></ul></div>
+                <div class="whatsapp-tip"><strong> Plantilla:</strong><br>"¡Hola! Soy de Metele 🍕<br>• [Tipo] x[Cantidad] = $[Total]<br>• Entrega: [Fecha]<br>¿Confirmás?"</div>
                 <div class="tip-card" style="border-color: #EF4444; background: linear-gradient(135deg, rgba(239,68,68,0.1), rgba(239,68,68,0.05));">
-                    <h4 style="color: #EF4444;">⚠️ Importante: Agregar columna "items"</h4>
-                    <p style="color: var(--text-secondary); font-size: 14px; margin-bottom: 8px;">Ahora los pedidos pueden tener m&uacute;ltiples productos. Ejecut&aacute; este SQL en Supabase (SQL Editor) para agregar la columna necesaria:</p>
+                    <h4 style="color: #EF4444;">⚠️ Ejecutar en Supabase (una sola vez)</h4>
+                    <p style="color: var(--text-secondary); font-size: 14px; margin-bottom: 8px;">Para habilitar pedidos con m&uacute;ltiples productos, ejecut&aacute; este SQL en Supabase &gt; SQL Editor:</p>
                     <pre style="background: #0a0a1a; padding: 16px; border-radius: 8px; font-size: 12px; color: #4ADE80; overflow-x: auto; white-space: pre-wrap; cursor: pointer;" onclick="copySQL()">ALTER TABLE pedidos ADD COLUMN IF NOT EXISTS items TEXT;</pre>
                     <p style="color: #666; font-size: 12px; margin-top: 8px;">Hac&eacute; clic para copiar</p>
                 </div>
@@ -422,6 +419,12 @@
             return p[2] + '/' + p[1] + '/' + p[0];
         }
 
+        function getTotalItems(items) {
+            var total = 0;
+            for (var i = 0; i < items.length; i++) total += items[i].cantidad;
+            return total;
+        }
+
         function normalize(row) {
             var o = {};
             for (var k in row) {
@@ -432,11 +435,16 @@
                 if (k === 'fecha_pago_estimado') { o.fechaPagoEstimado = row[k]; continue; }
                 if (k === 'uso_por_pizza') { o.usoPorPizza = parseFloat(row[k]); continue; }
                 if (k === 'insumo_tipo') { o.insumoTipo = row[k]; continue; }
-                if (k === 'items' && typeof row[k] === 'string') {
-                    try { o.items = JSON.parse(row[k]); } catch(e) { o.items = []; }
+                if (k === 'items') {
+                    if (typeof row[k] === 'string') {
+                        try { o.items = JSON.parse(row[k]); } catch(e) { o.items = []; }
+                    } else if (Array.isArray(row[k])) {
+                        o.items = row[k];
+                    } else {
+                        o.items = [];
+                    }
                     continue;
                 }
-                if (k === 'items' && Array.isArray(row[k])) { o.items = row[k]; continue; }
                 o[k] = row[k];
             }
             var nums = ['precioUnitario', 'total', 'monto', 'precio', 'stock', 'usoPorPizza', 'calidad'];
@@ -444,9 +452,8 @@
                 if (o[nums[i]] !== undefined && o[nums[i]] !== null) o[nums[i]] = parseFloat(o[nums[i]]);
             }
             if (!o.items) o.items = [];
-            // Si es pedido viejo sin items, migrar a formato items
             if (o.tipo && !o.items.length) {
-                o.items = [{ tipo: o.tipo, cantidad: o.cantidad || 1, precioUnitario: o.precioUnitario || 0 }];
+                o.items = [{ tipo: o.tipo, cantidad: o.cantidad || 1, precioUnitario: o.precioUnitario || 0, subtotal: (o.cantidad || 1) * (o.precioUnitario || 0) }];
             }
             return o;
         }
@@ -523,23 +530,13 @@
 
         function getItemsSummary(items) {
             if (!items || items.length === 0) return '';
-            var html = '<div class="items-summary">';
+            var html = '';
             for (var i = 0; i < items.length; i++) {
                 html += '<span class="badge-item">' + items[i].tipo + ' x' + items[i].cantidad + '</span>';
             }
-            html += '</div>';
             return html;
         }
 
-        function getTotalItems(items) {
-            var total = 0;
-            for (var i = 0; i < items.length; i++) total += items[i].cantidad;
-            return total;
-        }
-
-        // ==========================================
-        // NAVEGACIÓN
-        // ==========================================
         window.showSection = function(s) {
             var sections = document.querySelectorAll('main > section');
             for (var i = 0; i < sections.length; i++) sections[i].classList.add('section-hidden');
@@ -601,17 +598,13 @@
             sel.innerHTML = html;
         }
 
-        // ==========================================
-        // PEDIDO ITEMS
-        // ==========================================
         var itemCounter = 0;
 
-        function resetPedidoItems() {
+        window.resetPedidoItems = function() {
             document.getElementById('pedidoItems').innerHTML = '';
             itemCounter = 0;
             addPedidoItem();
-        }
-        window.resetPedidoItems = resetPedidoItems;
+        };
 
         window.addPedidoItem = function() {
             itemCounter++;
@@ -633,14 +626,11 @@
 
         window.calcItemSubtotal = function(id) {
             var tipo = document.getElementById('itemTipo_' + id).value;
-            var cantInput = document.getElementById('itemCant_' + id);
             var precioInput = document.getElementById('itemPrecio_' + id);
             var subDisplay = document.getElementById('itemSub_' + id);
-
             if (tipo === 'Muzzarella' && !precioInput.value) precioInput.value = 5000;
             if (tipo === 'Especial' && !precioInput.value) precioInput.value = 7000;
-
-            var cant = parseInt(cantInput.value) || 0;
+            var cant = parseInt(document.getElementById('itemCant_' + id).value) || 0;
             var precio = parseFloat(precioInput.value) || 0;
             var sub = cant * precio;
             subDisplay.textContent = '$' + sub.toLocaleString();
@@ -783,9 +773,6 @@
         }
         window.deletePedido = deletePedido;
 
-        // ==========================================
-        // CLIENTES
-        // ==========================================
         async function renderClientes() {
             var clientes = await dbGet('clientes');
             var pedidos = await dbGet('pedidos');
@@ -848,9 +835,6 @@
             document.getElementById('tituloCliente').textContent = 'Nuevo Cliente';
         }
 
-        // ==========================================
-        // PAGOS
-        // ==========================================
         async function savePago() {
             var d = { id: genId(), pedidoId: document.getElementById('pagoPedido').value, monto: parseFloat(document.getElementById('pagoMonto').value), metodo: document.getElementById('pagoMetodo').value, fecha: document.getElementById('pagoFecha').value };
             if (!d.pedidoId || !d.monto) { notify('Faltan datos', 'error'); return; }
@@ -934,12 +918,15 @@
         }
         window.renderDeudas = renderDeudas;
 
-        function quickPay(pid, rest) { populatePedidosParaPago(); setTimeout(function() { document.getElementById('pagoPedido').value = pid; document.getElementById('pagoMonto').value = rest; openModal('modalPago'); }, 100); }
-        window.quickPay = quickPay;
+        window.quickPay = function(pid, rest) {
+            populatePedidosParaPago();
+            setTimeout(function() {
+                document.getElementById('pagoPedido').value = pid;
+                document.getElementById('pagoMonto').value = rest;
+                openModal('modalPago');
+            }, 100);
+        };
 
-        // ==========================================
-        // INSUMOS
-        // ==========================================
         async function renderInsumos() {
             var insumos = await dbGet('insumos');
             var costo = 0;
@@ -1007,9 +994,6 @@
             document.getElementById('tituloInsumo').textContent = 'Nuevo Insumo';
         }
 
-        // ==========================================
-        // MARCAS
-        // ==========================================
         window.setCalidad = function(v) {
             var stars = document.querySelectorAll('#marcaCalidad .star');
             for (var i = 0; i < stars.length; i++) stars[i].classList.toggle('active', i < v);
@@ -1067,9 +1051,6 @@
             document.getElementById('tituloMarca').textContent = 'Nueva Marca';
         }
 
-        // ==========================================
-        // DASHBOARD
-        // ==========================================
         var chartPedidosTipo = null;
         var chartPedidosCanal = null;
 
@@ -1108,12 +1089,7 @@
                 type: 'bar',
                  {
                     labels: Object.keys(tipos),
-                    datasets: [{
-                        label: 'Ventas',
-                         Object.values(tipos),
-                        backgroundColor: ['#FF6B35', '#FFD700'],
-                        borderRadius: 8
-                    }]
+                    datasets: [{ label: 'Ventas',  Object.values(tipos), backgroundColor: ['#FF6B35', '#FFD700'], borderRadius: 8 }]
                 },
                 options: {
                     responsive: true,
@@ -1128,10 +1104,7 @@
                 type: 'doughnut',
                  {
                     labels: Object.keys(canales),
-                    datasets: [{
-                         Object.values(canales),
-                        backgroundColor: ['#3B82F6', '#A855F7']
-                    }]
+                    datasets: [{  Object.values(canales), backgroundColor: ['#3B82F6', '#A855F7'] }]
                 },
                 options: {
                     responsive: true,
@@ -1142,7 +1115,7 @@
 
             var dv = document.getElementById('dashboardPedidos');
             var sorted = pedidos.slice().sort(function(a, b) { return b.fecha > a.fecha ? 1 : -1; }).slice(0, 5);
-            if (sorted.length === 0) { dv.innerHTML = '<tr><td colspan="7" class="empty-state">Sin pedidos</td></tr>'; }
+            if (sorted.length === 0) { dv.innerHTML = '<tr><td colspan="6" class="empty-state">Sin pedidos</td></tr>'; }
             else {
                 var html = '';
                 for (var i = 0; i < sorted.length; i++) {
@@ -1156,9 +1129,6 @@
         }
         window.updateDashboard = updateDashboard;
 
-        // ==========================================
-        // REPORTES
-        // ==========================================
         var chartMensuales = null;
         var chartClientesTop = null;
         var chartProductos = null;
@@ -1185,14 +1155,7 @@
                 type: 'line',
                  {
                     labels: sk,
-                    datasets: [{
-                        label: 'Pedidos',
-                         sk.map(function(m) { return meses[m]; }),
-                        borderColor: '#FF6B35',
-                        backgroundColor: 'rgba(255,107,53,0.1)',
-                        fill: true,
-                        tension: 0.4
-                    }]
+                    datasets: [{ label: 'Pedidos',  sk.map(function(m) { return meses[m]; }), borderColor: '#FF6B35', backgroundColor: 'rgba(255,107,53,0.1)', fill: true, tension: 0.4 }]
                 },
                 options: {
                     responsive: true,
@@ -1217,12 +1180,7 @@
                 type: 'bar',
                  {
                     labels: top.map(function(x) { return x.n; }),
-                    datasets: [{
-                        label: 'Compras',
-                         top.map(function(x) { return x.t; }),
-                        backgroundColor: ['#FF6B35', '#FF8F5E', '#FFB088', '#FFD0B5', '#FFE8D8'],
-                        borderRadius: 8
-                    }]
+                    datasets: [{ label: 'Compras',  top.map(function(x) { return x.t; }), backgroundColor: ['#FF6B35', '#FF8F5E', '#FFB088', '#FFD0B5', '#FFE8D8'], borderRadius: 8 }]
                 },
                 options: {
                     indexAxis: 'y',
@@ -1239,10 +1197,7 @@
                 type: 'pie',
                  {
                     labels: Object.keys(pv),
-                    datasets: [{
-                         Object.values(pv),
-                        backgroundColor: ['#FF6B35', '#FFD700', '#22C55E', '#3B82F6']
-                    }]
+                    datasets: [{  Object.values(pv), backgroundColor: ['#FF6B35', '#FFD700', '#22C55E', '#3B82F6'] }]
                 },
                 options: {
                     responsive: true,
@@ -1253,9 +1208,6 @@
         }
         window.renderReportes = renderReportes;
 
-        // ==========================================
-        // EXPORT / IMPORT
-        // ==========================================
         async function exportData() {
             var d = { clientes: await dbGet('clientes'), pedidos: await dbGet('pedidos'), insumos: await dbGet('insumos'), marcas: await dbGet('marcas'), pagos: await dbGet('pagos') };
             var blob = new Blob([JSON.stringify(d, null, 2)], { type: 'application/json' });
@@ -1289,17 +1241,11 @@
         }
         window.importData = importData;
 
-        // ==========================================
-        // COPY SQL
-        // ==========================================
         window.copySQL = function() {
             navigator.clipboard.writeText('ALTER TABLE pedidos ADD COLUMN IF NOT EXISTS items TEXT;');
             notify('SQL copiado al portapapeles');
         };
 
-        // ==========================================
-        // SEED
-        // ==========================================
         async function seed() {
             var clientes = await dbGet('clientes');
             if (clientes.length > 0) return;
