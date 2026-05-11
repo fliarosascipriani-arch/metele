@@ -340,9 +340,9 @@
     // ==========================================
     // CONFIGURACIÓN SUPABASE
     // ==========================================
-    const SUPABASE_URL = 'https://zundvvavprjvqupynryg.supabase.co';
-    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp1bmR2dmF2cHJqdnF1cHlucnlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg0NTE2MDUsImV4cCI6MjA5NDAyNzYwNX0.0w7mYaBw2bgDLTjZJjYn8Fo_gvks_nGcuMNj5L8lpfM';
-    const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    var SUPABASE_URL = 'https://zundvvavprjvqupynryg.supabase.co';
+    var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp1bmR2dmF2cHJqdnF1cHlucnlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg0NTE2MDUsImV4cCI6MjA5NDAyNzYwNX0.0w7mYaBw2bgDLTjZJjYn8Fo_gvks_nGcuMNj5L8lpfM';
+    var sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     // ==========================================
     // UTILIDADES
@@ -429,6 +429,17 @@
         var result = await sb.from(table).delete().eq('id', id);
         if (result.error) { notify('Error: ' + result.error.message, 'error'); return false; }
         return true;
+    }
+
+    // CORREGIDO: ahora borra pagos primero, luego la venta
+    async function deleteVentaWithPagos(ventaId) {
+        var pagos = await dbGet('pagos');
+        for (var i = 0; i < pagos.length; i++) {
+            if (pagos[i].ventaId === ventaId) {
+                await dbDelete('pagos', pagos[i].id);
+            }
+        }
+        return await dbDelete('ventas', ventaId);
     }
 
     // ==========================================
@@ -724,12 +735,9 @@
     }
 
     async function deleteVenta(id) {
-        if (!confirm('¿Eliminar esta venta?')) return;
-        if (await dbDelete('ventas', id)) {
-            var pagos = await dbGet('pagos');
-            for (var i = 0; i < pagos.length; i++) {
-                if (pagos[i].ventaId === id) await dbDelete('pagos', pagos[i].id);
-            }
+        if (!confirm('¿Eliminar esta venta y sus pagos asociados?')) return;
+        var ok = await deleteVentaWithPagos(id);
+        if (ok) {
             notify('Venta eliminada');
             renderVentas();
             updateDashboard();
@@ -844,7 +852,8 @@
                 var p = pagosSorted[i];
                 var vt = null;
                 for (var j = 0; j < ventas.length; j++) { if (ventas[j].id === p.ventaId) { vt = ventas[j]; break; } }
-                var cl = vt ? (clientes.find ? clientes.find(function(c) { return c.id === vt.clienteId; }) : null) : null;
+                var cl = null;
+                if (vt) { for (var j = 0; j < clientes.length; j++) { if (clientes[j].id === vt.clienteId) { cl = clientes[j]; break; } } }
                 var nombreCl = cl ? cl.nombre : 'N/A';
                 html += '<tr><td>' + fmt(p.fecha) + '</td><td>' + nombreCl + '</td><td style="color:#22C55E;font-weight:700">$' + p.monto.toLocaleString() + '</td><td>' + p.metodo + '</td><td><button class="btn btn-danger btn-sm" onclick="deletePago(\'' + p.id + '\')">🗑️</button></td></tr>';
             }
@@ -1062,11 +1071,11 @@
         ventas.forEach(function(v) { tipos[v.tipo] = (tipos[v.tipo] || 0) + v.total; });
         chartVentasTipo = new Chart(document.getElementById('chartVentasTipo'), {
             type: 'bar',
-            data: {
+             {
                 labels: Object.keys(tipos),
                 datasets: [{
                     label: 'Ventas',
-                    data: Object.values(tipos),
+                     Object.values(tipos),
                     backgroundColor: ['#FF6B35', '#FFD700'],
                     borderRadius: 8
                 }]
@@ -1085,10 +1094,10 @@
         ventas.forEach(function(v) { canales[v.canal] = (canales[v.canal] || 0) + v.total; });
         chartVentasCanal = new Chart(document.getElementById('chartVentasCanal'), {
             type: 'doughnut',
-            data: {
+             {
                 labels: Object.keys(canales),
                 datasets: [{
-                    data: Object.values(canales),
+                     Object.values(canales),
                     backgroundColor: ['#3B82F6', '#A855F7']
                 }]
             },
@@ -1137,7 +1146,6 @@
         var ventas = await dbGet('ventas');
         var clientes = await dbGet('clientes');
         var insumos = await dbGet('insumos');
-        // Ventas mensuales
         var meses = {};
         ventas.forEach(function(v) {
             var m = v.fecha ? v.fecha.substring(0, 7) : 'Sin fecha';
@@ -1147,11 +1155,11 @@
         if (chartMensuales) chartMensuales.destroy();
         chartMensuales = new Chart(document.getElementById('chartVentasMensuales'), {
             type: 'line',
-            data: {
+             {
                 labels: sk,
                 datasets: [{
                     label: 'Ventas',
-                    data: sk.map(function(m) { return meses[m]; }),
+                     sk.map(function(m) { return meses[m]; }),
                     borderColor: '#FF6B35',
                     backgroundColor: 'rgba(255,107,53,0.1)',
                     fill: true,
@@ -1168,14 +1176,12 @@
                 }
             }
         });
-        // Rentabilidad
         var ti = ventas.reduce(function(s, v) { return s + v.total; }, 0);
         var ci = 0;
         insumos.forEach(function(x) { ci += ventas.reduce(function(s, v) { return s + v.cantidad * (x.usoPorPizza || 0); }, 0) * x.precio; });
         var gn = ti - ci;
         var mg = ti > 0 ? ((gn / ti) * 100).toFixed(1) : 0;
         document.getElementById('rentabilidadContent').innerHTML = '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:16px;"><div style="background:#0f0f0f;padding:16px;border-radius:12px;"><p style="color:#666;font-size:12px;">Ingresos</p><p style="font-size:24px;font-weight:800;color:white">$' + ti.toLocaleString() + '</p></div><div style="background:#0f0f0f;padding:16px;border-radius:12px;"><p style="color:#666;font-size:12px;">Costo Insumos</p><p style="font-size:24px;font-weight:800;color:#EF4444">$' + ci.toLocaleString() + '</p></div><div style="background:#0f0f0f;padding:16px;border-radius:12px;"><p style="color:#666;font-size:12px;">Ganancia</p><p style="font-size:24px;font-weight:800;color:#22C55E">$' + gn.toLocaleString() + '</p></div><div style="background:#0f0f0f;padding:16px;border-radius:12px;"><p style="color:#666;font-size:12px;">Margen</p><p style="font-size:24px;font-weight:800;color:#FFD700">' + mg + '%</p></div></div><div style="height:24px;background:#0f0f0f;border-radius:12px;overflow:hidden;"><div style="width:' + mg + '%;height:100%;background:linear-gradient(90deg,#22C55E,#4ADE80);border-radius:12px;"></div></div>';
-        // Mejores clientes
         var cv = {};
         ventas.forEach(function(v) { cv[v.clienteId] = (cv[v.clienteId] || 0) + v.total; });
         var top = Object.entries(cv).map(function(entry) {
@@ -1187,7 +1193,7 @@
         if (chartClientesTop) chartClientesTop.destroy();
         chartClientesTop = new Chart(document.getElementById('chartClientesTop'), {
             type: 'bar',
-            data: {
+             {
                 labels: top.map(function(x) { return x.n; }),
                 datasets: [{
                     label: 'Compras',
@@ -1207,16 +1213,15 @@
                 }
             }
         });
-        // Por producto
         var pv = {};
         ventas.forEach(function(v) { pv[v.tipo] = (pv[v.tipo] || 0) + v.cantidad; });
         if (chartProductos) chartProductos.destroy();
         chartProductos = new Chart(document.getElementById('chartProductos'), {
             type: 'pie',
-            data: {
+             {
                 labels: Object.keys(pv),
                 datasets: [{
-                    data: Object.values(pv),
+                     Object.values(pv),
                     backgroundColor: ['#FF6B35', '#FFD700', '#22C55E', '#3B82F6']
                 }]
             },
@@ -1271,7 +1276,7 @@
     }
 
     // ==========================================
-    // SEED (Datos de ejemplo)
+    // SEED
     // ==========================================
     async function seed() {
         var clientes = await dbGet('clientes');
