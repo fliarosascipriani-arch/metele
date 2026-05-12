@@ -157,7 +157,6 @@ function fmt(d){if(!d)return'-';var p=d.split('-');return p[2]+'/'+p[1]+'/'+p[0]
 function getTotalItems(items){var t=0;for(var i=0;i<items.length;i++)t+=items[i].cantidad;return t}
 function getEP(p){return p.estadoPago||'Pendiente'}
 
-/* ========== toSnake: convierte camelCase → snake_case para Supabase ========== */
 function toSnake(d){
 var o={};
 for(var k in d){
@@ -174,7 +173,6 @@ o[k]=d[k];
 return o;
 }
 
-/* ========== normalize: convierte snake_case → camelCase desde Supabase ========== */
 function normalize(row){
 var o={};
 for(var k in row){
@@ -197,9 +195,7 @@ continue;
 o[k]=row[k];
 }
 var nums=['precioUnitario','total','monto','precio','stock','usoPorPizza','calidad'];
-for(var i=0;i<nums.length;i++){
-if(o[nums[i]]!==undefined&&o[nums[i]]!==null)o[nums[i]]=parseFloat(o[nums[i]]);
-}
+for(var i=0;i<nums.length;i++){if(o[nums[i]]!==undefined&&o[nums[i]]!==null)o[nums[i]]=parseFloat(o[nums[i]])}
 if(!o.items)o.items=[];
 if(o.items.length===0&&o.tipoOld){o.items=[{tipo:o.tipoOld,cantidad:o.cantidadOld||1,precioUnitario:o.precioUnitario||0,subtotal:(o.cantidadOld||1)*(o.precioUnitario||0)}]}
 if(o.items.length===0&&o.total>0){o.items=[{tipo:'Muzzarella',cantidad:1,precioUnitario:o.total,subtotal:o.total}]}
@@ -230,43 +226,8 @@ async function deleteVentaWithPagos(vid){var pagos=await dbGet('pagos');for(var 
 
 function getStatusBadge(estado){var map={'Pendiente':'ba-pn','En proceso':'ba-pr','Entregado':'ba-e'};return map[estado]||'ba-pn'}
 function getItemsSummary(items){if(!items||items.length===0)return'';var h='';for(var i=0;i<items.length;i++){h+='<span class="bi">'+items[i].tipo+' x'+items[i].cantidad+'</span>'}return h}
-
-/* ========== CALCULO DE DEUDA CORREGIDO ========== */
-function getDeudaRestante(vid, pedidos, pagos){
-  var p=null;
-  for(var i=0;i<pedidos.length;i++){if(pedidos[i].id===vid){p=pedidos[i];break}}
-  if(!p)return 0;
-  if(getEP(p)==='Pagado')return 0;
-  var pag=0;
-  for(var i=0;i<pagos.length;i++){
-    if(pagos[i].ventaId===vid) pag += pagos[i].monto;
-  }
-  return Math.max(0, p.total - pag);
-}
-
-function calcDeudaCliente(cid, pedidos, pagos){
-  // Total de todas las ventas del cliente
-  var tv=0;
-  for(var i=0;i<pedidos.length;i++){
-    if(pedidos[i].clienteId===cid) tv += pedidos[i].total;
-  }
-  // Total de todos los pagos aplicados a ventas de este cliente
-  var tp=0;
-  for(var i=0;i<pagos.length;i++){
-    var pago = pagos[i];
-    // Buscar el pedido asociado a este pago
-    for(var j=0;j<pedidos.length;j++){
-      if(pedidos[j].id === pago.ventaId){
-        // Si el pedido pertenece a este cliente, sumar el pago
-        if(pedidos[j].clienteId === cid){
-          tp += pago.monto;
-        }
-        break;
-      }
-    }
-  }
-  return Math.max(0, tv - tp);
-}
+function getDeudaRestante(vid,pedidos,pagos){var p=null;for(var i=0;i<pedidos.length;i++){if(pedidos[i].id===vid){p=pedidos[i];break}}if(!p)return 0;if(getEP(p)==='Pagado')return 0;var pag=0;for(var i=0;i<pagos.length;i++){if(pagos[i].ventaId===vid)pag+=pagos[i].monto}return Math.max(0,p.total-pag)}
+function calcDeudaCliente(cid,pedidos,pagos){var tv=0;for(var i=0;i<pedidos.length;i++){if(pedidos[i].clienteId===cid)tv+=pedidos[i].total}var tp=0;for(var i=0;i<pagos.length;i++){for(var j=0;j<pedidos.length;j++){if(pedidos[j].id===pagos[i].ventaId&&pedidos[j].clienteId===cid){tp+=pagos[i].monto;break}}}return Math.max(0,tv-tp)}
 
 async function populateClientes(){var c=await dbGet('clientes');var s=document.getElementById('pCliente');var h='<option value="">Seleccionar...</option>';for(var i=0;i<c.length;i++){h+='<option value="'+c[i].id+'">'+c[i].nombre+' ('+c[i].tipo+')</option>'}s.innerHTML=h}
 async function populatePedidosParaPago(){var pe=await dbGet(TBL);var pa=await dbGet('pagos');var s=document.getElementById('pagPedido');var h='<option value="">Seleccionar...</option>';for(var i=0;i<pe.length;i++){if(getEP(pe[i])!=='Pagado'){var pag=0;for(var j=0;j<pa.length;j++){if(pa[j].ventaId===pe[i].id)pag+=pa[j].monto}var rest=pe[i].total-pag;var desc='';for(var j=0;j<pe[i].items.length;j++){desc+=pe[i].items[j].tipo+' x'+pe[i].items[j].cantidad+' '}h+='<option value="'+pe[i].id+'">'+desc.trim()+' - Rest: $'+rest.toLocaleString()+'</option>'}}s.innerHTML=h}
@@ -284,11 +245,27 @@ window.renderPedidos=async function(){
 var pedidos=await dbGet(TBL);var clientes=await dbGet('clientes');var pagos=await dbGet('pagos');
 var s=(document.getElementById('searchPedido')||{}).value||'';s=s.toLowerCase();
 var fE=document.getElementById('filterPE').value;var fP=document.getElementById('filterPP').value;
-var filtered=[];for(var i=0;i<pedidos.length;i++){var p=pedidos[i];var cl=null;for(var j=0;j<clientes.length;j++){if(clientes[j].id===p.clienteId){cl=clientes[j];break}}var n=cl?cl.nombre.toLowerCase():'';var match=(!s||n.indexOf(s)!==-1);for(var k=0;k<p.items.length;k++){if(p.items[k].tipo.toLowerCase().indexOf(s)!==-1)match=true}var ep=getEP(p);if(match&&(!fE||p.estado===fE)&&(!fP||ep===fP))filtered.push(p)}
-filtered.sort(function(a,b){return b.fecha>a.fecha?1:-1});var tb=document.getElementById('tPedidos');
+var filtered=[];
+for(var i=0;i<pedidos.length;i++){
+var p=pedidos[i];var cl=null;for(var j=0;j<clientes.length;j++){if(clientes[j].id===p.clienteId){cl=clientes[j];break}}
+var n=cl?cl.nombre.toLowerCase():'';var match=(!s||n.indexOf(s)!==-1);
+for(var k=0;k<p.items.length;k++){if(p.items[k].tipo.toLowerCase().indexOf(s)!==-1)match=true}
+var ep=getEP(p);
+if(match&&(!fE||p.estado===fE)&&(!fP||ep===fP))filtered.push(p);
+}
+filtered.sort(function(a,b){return b.fecha>a.fecha?1:-1});
+var tb=document.getElementById('tPedidos');
 document.getElementById('pedidoCount').textContent='('+pedidos.length+' total)';
 if(filtered.length===0){tb.innerHTML='<tr><td colspan="8" class="es">Sin pedidos</td></tr>';return}
-var h='';for(var i=0;i<filtered.length;i++){var p=filtered[i];var cl=null;for(var j=0;j<clientes.length;j++){if(clientes[j].id===p.clienteId){cl=clientes[j];break}}var hoy=new Date().toISOString().split('T')[0];var ep=getEP(p);var vto=p.fechaPagoEstimado&&p.fechaPagoEstimado<hoy&&ep!=='Pagado';var pb=ep==='Pagado'?'ba-p':(ep==='Pago Parcial'?'ba-pp':(vto?'ba-v':'ba-pn'));var pt=ep==='Pagado'?'Pagado':(ep==='Pago Parcial'?'Parcial':(vto?'Vencido':'Pendiente'));var deuda=getDeudaRestante(p.id,pedidos,pagos);h+='<tr><td>'+fmt(p.fecha)+'</td><td>'+(cl?cl.nombre:'N/A')+'</td><td>'+getItemsSummary(p.items)+'</td><td>$'+p.total.toLocaleString()+'</td><td><span class="ba '+getStatusBadge(p.estado)+'">'+p.estado+'</span></td><td><span class="ba '+pb+'">'+pt+'</span></td><td style="color:'+(deuda>0?'#EF4444':'#22C55E')+'">$'+deuda.toLocaleString()+'</td><td><button class="btn bsm bs" onclick="editPedido(\''+p.id+'\')">✏️</button> <button class="btn bsm bd" onclick="deletePedido(\''+p.id+'\')">🗑️</button></td></tr>'}
+var h='';
+for(var i=0;i<filtered.length;i++){
+var p=filtered[i];var cl=null;for(var j=0;j<clientes.length;j++){if(clientes[j].id===p.clienteId){cl=clientes[j];break}}
+var hoy=new Date().toISOString().split('T')[0];var ep=getEP(p);var vto=p.fechaPagoEstimado&&p.fechaPagoEstimado<hoy&&ep!=='Pagado';
+var pb=ep==='Pagado'?'ba-p':(ep==='Pago Parcial'?'ba-pp':(vto?'ba-v':'ba-pn'));
+var pt=ep==='Pagado'?'Pagado':(ep==='Pago Parcial'?'Parcial':(vto?'Vencido':'Pendiente'));
+var deuda=getDeudaRestante(p.id,pedidos,pagos);
+h+='<tr><td>'+fmt(p.fecha)+'</td><td>'+(cl?cl.nombre:'N/A')+'</td><td>'+getItemsSummary(p.items)+'</td><td>$'+p.total.toLocaleString()+'</td><td><span class="ba '+getStatusBadge(p.estado)+'">'+p.estado+'</span></td><td><span class="ba '+pb+'">'+pt+'</span></td><td style="color:'+(deuda>0?'#EF4444':'#22C55E')+'">$'+deuda.toLocaleString()+'</td><td><button class="btn bsm bs" onclick="editPedido(\''+p.id+'\')">✏️</button> <button class="btn bsm bd" onclick="deletePedido(\''+p.id+'\')">🗑️</button></td></tr>';
+}
 tb.innerHTML=h;
 };
 
@@ -299,22 +276,11 @@ window.editPedido=async function(id){var pedidos=await dbGet(TBL);var p=null;for
 window.deletePedido=async function(id){if(!confirm('¿Eliminar este pedido y sus pagos?'))return;if(await deleteVentaWithPagos(id)){notify('Eliminado');window.renderPedidos();updateDashboard()}};
 
 window.renderClientes=async function(){
-var clientes=await dbGet('clientes');
-var pedidos=await dbGet(TBL);
-var pagos=await dbGet('pagos');
+var clientes=await dbGet('clientes');var pedidos=await dbGet(TBL);var pagos=await dbGet('pagos');
 var s=(document.getElementById('searchCliente')||{}).value||'';s=s.toLowerCase();
 var filtered=[];for(var i=0;i<clientes.length;i++){if(clientes[i].nombre.toLowerCase().indexOf(s)!==-1)filtered.push(clientes[i])}
 var tb=document.getElementById('tClientes');if(filtered.length===0){tb.innerHTML='<tr><td colspan="7" class="es">Sin clientes</td></tr>';return}
-var h='';
-for(var i=0;i<filtered.length;i++){
-  var c=filtered[i];
-  var tot=0;
-  for(var j=0;j<pedidos.length;j++){if(pedidos[j].clienteId===c.id)tot+=pedidos[j].total}
-  var deuda=calcDeudaCliente(c.id,pedidos,pagos);
-  var bc=(c.tipo==='Almacen'||c.tipo==='Almacén')?'ba-al':'ba-cl';
-  var wa=c.telefono?'<a href="https://wa.me/54'+c.telefono.replace(/\D/g,'')+'" target="_blank" class="btn bsm bg" style="text-decoration:none;margin-left:4px">📱</a>':'';
-  h+='<tr><td><b>'+c.nombre+'</b></td><td><span class="ba '+bc+'">'+c.tipo+'</span></td><td>'+(c.telefono||'-')+'</td><td>'+(c.direccion||'-')+'</td><td>$'+tot.toLocaleString()+'</td><td style="color:'+(deuda>0?'#EF4444':'#22C55E')+'">$'+deuda.toLocaleString()+'</td><td><button class="btn bsm bs" onclick="editCliente(\''+c.id+'\')">✏️</button> <button class="btn bsm bd" onclick="deleteCliente(\''+c.id+'\')">🗑️</button> '+wa+'</td></tr>';
-}
+var h='';for(var i=0;i<filtered.length;i++){var c=filtered[i];var tot=0;for(var j=0;j<pedidos.length;j++){if(pedidos[j].clienteId===c.id)tot+=pedidos[j].total}var deuda=calcDeudaCliente(c.id,pedidos,pagos);var bc=(c.tipo==='Almacen'||c.tipo==='Almacén')?'ba-al':'ba-cl';var wa=c.telefono?'<a href="https://wa.me/54'+c.telefono.replace(/\D/g,'')+'" target="_blank" class="btn bsm bg" style="text-decoration:none;margin-left:4px">📱</a>':'';h+='<tr><td><b>'+c.nombre+'</b></td><td><span class="ba '+bc+'">'+c.tipo+'</span></td><td>'+(c.telefono||'-')+'</td><td>'+(c.direccion||'-')+'</td><td>$'+tot.toLocaleString()+'</td><td style="color:'+(deuda>0?'#EF4444':'#22C55E')+'">$'+deuda.toLocaleString()+'</td><td><button class="btn bsm bs" onclick="editCliente(\''+c.id+'\')">✏️</button> <button class="btn bsm bd" onclick="deleteCliente(\''+c.id+'\')">🗑️</button> '+wa+'</td></tr>'}
 tb.innerHTML=h;
 };
 
@@ -324,43 +290,10 @@ window.editCliente=async function(id){var c=await dbGet('clientes');var cl=null;
 window.deleteCliente=async function(id){if(!confirm('¿Eliminar?'))return;if(await dbDelete('clientes',id)){notify('Eliminado');window.renderClientes()}};
 function clearClienteForm(){document.getElementById('cId').value='';document.getElementById('cNombre').value='';document.getElementById('cTipo').value='Almacén';document.getElementById('cTel').value='';document.getElementById('cDir').value='';document.getElementById('cNotas').value='';document.getElementById('tCliente').textContent='Nuevo Cliente'}
 
-window.savePago=async function(){
-var d={id:genId(),ventaId:document.getElementById('pagPedido').value,monto:parseFloat(document.getElementById('pagMonto').value),metodo:document.getElementById('pagMetodo').value,fecha:document.getElementById('pagFecha').value};
-if(!d.ventaId||!d.monto){notify('Faltan datos','error');return}
-var pedidos=await dbGet(TBL);
-var pedido=null;
-for(var i=0;i<pedidos.length;i++){if(pedidos[i].id===d.ventaId){pedido=pedidos[i];break}}
-if(!pedido){notify('No encontrado','error');return}
-var pagos=await dbGet('pagos');
-var pagado=0;
-for(var i=0;i<pagos.length;i++){if(pagos[i].ventaId===d.ventaId)pagado+=pagos[i].monto}
-if(pagado+d.monto>pedido.total){notify('Excede la deuda','error');return}
-if(await dbInsert('pagos',d)){
-  var ep=document.getElementById('pagEstado').value;
-  if(pagado+d.monto>=pedido.total)ep='Pagado';
-  await dbUpdate(TBL,d.ventaId,{estadoPago:ep});
-  closeModal('modalPago');
-  document.getElementById('pagMonto').value='';
-  window.renderDeudas();
-  updateDashboard();
-  notify('Pago registrado');
-}
-};
+window.savePago=async function(){var d={id:genId(),ventaId:document.getElementById('pagPedido').value,monto:parseFloat(document.getElementById('pagMonto').value),metodo:document.getElementById('pagMetodo').value,fecha:document.getElementById('pagFecha').value};if(!d.ventaId||!d.monto){notify('Faltan datos','error');return}var pedidos=await dbGet(TBL);var pedido=null;for(var i=0;i<pedidos.length;i++){if(pedidos[i].id===d.ventaId){pedido=pedidos[i];break}}if(!pedido){notify('No encontrado','error');return}var pagos=await dbGet('pagos');var pagado=0;for(var i=0;i<pagos.length;i++){if(pagos[i].ventaId===d.ventaId)pagado+=pagos[i].monto}if(pagado+d.monto>pedido.total){notify('Excede la deuda','error');return}if(await dbInsert('pagos',d)){var ep=document.getElementById('pagEstado').value;if(pagado+d.monto>=pedido.total)ep='Pagado';await dbUpdate(TBL,d.ventaId,{estadoPago:ep});closeModal('modalPago');document.getElementById('pagMonto').value='';window.renderDeudas();updateDashboard();notify('Pago registrado')}};
 window.deletePago=async function(id){if(!confirm('¿Eliminar?'))return;if(await dbDelete('pagos',id)){notify('Eliminado');window.renderDeudas();updateDashboard()}};
 
-window.renderDeudas=async function(){
-var pedidos=await dbGet(TBL);var clientes=await dbGet('clientes');var pagos=await dbGet('pagos');
-var hoy=new Date().toISOString().split('T')[0];var pend=[];for(var i=0;i<pedidos.length;i++){if(getEP(pedidos[i])!=='Pagado')pend.push(pedidos[i])}
-var totD=0,venc=0;for(var i=0;i<pend.length;i++){var pag=0;for(var j=0;j<pagos.length;j++){if(pagos[j].ventaId===pend[i].id)pag+=pagos[j].monto}var rest=pend[i].total-pag;totD+=rest;if(pend[i].fechaPagoEstimado&&pend[i].fechaPagoEstimado<hoy)venc+=rest}
-var mes=hoy.substring(0,7);var cob=0;for(var i=0;i<pagos.length;i++){if(pagos[i].fecha&&pagos[i].fecha.substring(0,7)===mes)cob+=pagos[i].monto}
-document.getElementById('kpiTD').textContent='$'+totD.toLocaleString();document.getElementById('kpiDV').textContent='$'+venc.toLocaleString();document.getElementById('kpiCM').textContent='$'+cob.toLocaleString();
-var tb=document.getElementById('tDeudas');if(pend.length===0){tb.innerHTML='<tr><td colspan="8" class="es">🎉 ¡Sin deudas!</td></tr>';return}
-var h='';for(var i=0;i<pend.length;i++){var p=pend[i];var cl=null;for(var j=0;j<clientes.length;j++){if(clientes[j].id===p.clienteId){cl=clientes[j];break}}var pag=0;for(var j=0;j<pagos.length;j++){if(pagos[j].ventaId===p.id)pag+=pagos[j].monto}var rest=p.total-pag;var vto=p.fechaPagoEstimado&&p.fechaPagoEstimado<hoy;var desc='';for(var j=0;j<p.items.length;j++){desc+=p.items[j].tipo+' x'+p.items[j].cantidad+' '}var ep=getEP(p);var pb=ep==='Pago Parcial'?'ba-pp':'ba-pn';h+='<tr><td>'+(cl?cl.nombre:'N/A')+'</td><td>'+desc.trim()+'</td><td>$'+p.total.toLocaleString()+'</td><td>$'+pag.toLocaleString()+'</td><td style="color:#EF4444;font-weight:700">$'+rest.toLocaleString()+'</td><td>'+(p.fechaPagoEstimado?fmt(p.fechaPagoEstimado):'-')+'</td><td><span class="ba '+pb+'">'+(ep==='Pago Parcial'?'Parcial':'Pendiente')+'</span></td><td><button class="btn bsm bg" onclick="quickPay(\''+p.id+'\','+rest+')">💵</button></td></tr>'}
-tb.innerHTML=h;
-var tp=document.getElementById('tPagos');var ps=pagos.slice().sort(function(a,b){return b.fecha>a.fecha?1:-1});if(ps.length===0){tp.innerHTML='<tr><td colspan="5" class="es">Sin pagos</td></tr>';return}
-var h2='';for(var i=0;i<ps.length;i++){var pa=ps[i];var vt=null;for(var j=0;j<pedidos.length;j++){if(pedidos[j].id===pa.ventaId){vt=pedidos[j];break}}var cl=null;if(vt){for(var j=0;j<clientes.length;j++){if(clientes[j].id===vt.clienteId){cl=clientes[j];break}}}h2+='<tr><td>'+fmt(pa.fecha)+'</td><td>'+(cl?cl.nombre:'N/A')+'</td><td style="color:#22C55E;font-weight:700">$'+pa.monto.toLocaleString()+'</td><td>'+pa.metodo+'</td><td><button class="btn bsm bd" onclick="deletePago(\''+pa.id+'\')">🗑️</button></td></tr>'}
-tp.innerHTML=h2;
-};
+window.renderDeudas=async function(){var pedidos=await dbGet(TBL);var clientes=await dbGet('clientes');var pagos=await dbGet('pagos');var hoy=new Date().toISOString().split('T')[0];var pend=[];for(var i=0;i<pedidos.length;i++){if(getEP(pedidos[i])!=='Pagado')pend.push(pedidos[i])}var totD=0,venc=0;for(var i=0;i<pend.length;i++){var pag=0;for(var j=0;j<pagos.length;j++){if(pagos[j].ventaId===pend[i].id)pag+=pagos[j].monto}var rest=pend[i].total-pag;totD+=rest;if(pend[i].fechaPagoEstimado&&pend[i].fechaPagoEstimado<hoy)venc+=rest}var mes=hoy.substring(0,7);var cob=0;for(var i=0;i<pagos.length;i++){if(pagos[i].fecha&&pagos[i].fecha.substring(0,7)===mes)cob+=pagos[i].monto}document.getElementById('kpiTD').textContent='$'+totD.toLocaleString();document.getElementById('kpiDV').textContent='$'+venc.toLocaleString();document.getElementById('kpiCM').textContent='$'+cob.toLocaleString();var tb=document.getElementById('tDeudas');if(pend.length===0){tb.innerHTML='<tr><td colspan="8" class="es">🎉 ¡Sin deudas!</td></tr>';return}var h='';for(var i=0;i<pend.length;i++){var p=pend[i];var cl=null;for(var j=0;j<clientes.length;j++){if(clientes[j].id===p.clienteId){cl=clientes[j];break}}var pag=0;for(var j=0;j<pagos.length;j++){if(pagos[j].ventaId===p.id)pag+=pagos[j].monto}var rest=p.total-pag;var vto=p.fechaPagoEstimado&&p.fechaPagoEstimado<hoy;var desc='';for(var j=0;j<p.items.length;j++){desc+=p.items[j].tipo+' x'+p.items[j].cantidad+' '}var ep=getEP(p);var pb=ep==='Pago Parcial'?'ba-pp':'ba-pn';h+='<tr><td>'+(cl?cl.nombre:'N/A')+'</td><td>'+desc.trim()+'</td><td>$'+p.total.toLocaleString()+'</td><td>$'+pag.toLocaleString()+'</td><td style="color:#EF4444;font-weight:700">$'+rest.toLocaleString()+'</td><td>'+(p.fechaPagoEstimado?fmt(p.fechaPagoEstimado):'-')+'</td><td><span class="ba '+pb+'">'+(ep==='Pago Parcial'?'Parcial':'Pendiente')+'</span></td><td><button class="btn bsm bg" onclick="quickPay(\''+p.id+'\','+rest+')">💵</button></td></tr>'}tb.innerHTML=h;var tp=document.getElementById('tPagos');var ps=pagos.slice().sort(function(a,b){return b.fecha>a.fecha?1:-1});if(ps.length===0){tp.innerHTML='<tr><td colspan="5" class="es">Sin pagos</td></tr>';return}var h2='';for(var i=0;i<ps.length;i++){var pa=ps[i];var vt=null;for(var j=0;j<pedidos.length;j++){if(pedidos[j].id===pa.ventaId){vt=pedidos[j];break}}var cl=null;if(vt){for(var j=0;j<clientes.length;j++){if(clientes[j].id===vt.clienteId){cl=clientes[j];break}}}h2+='<tr><td>'+fmt(pa.fecha)+'</td><td>'+(cl?cl.nombre:'N/A')+'</td><td style="color:#22C55E;font-weight:700">$'+pa.monto.toLocaleString()+'</td><td>'+pa.metodo+'</td><td><button class="btn bsm bd" onclick="deletePago(\''+pa.id+'\')">🗑️</button></td></tr>'}tp.innerHTML=h2};
 window.quickPay=function(vid,rest){populatePedidosParaPago();setTimeout(function(){document.getElementById('pagPedido').value=vid;document.getElementById('pagMonto').value=rest;window.openModal('modalPago')},100)};
 
 window.renderInsumos=async function(){var insumos=await dbGet('insumos');var costo=0;for(var i=0;i<insumos.length;i++)costo+=(insumos[i].precio||0)*(insumos[i].usoPorPizza||0);var tipos=['Muzzarella','Especial'];var pvM={'Muzzarella':5000,'Especial':7000};var h='';for(var i=0;i<tipos.length;i++){var pv=pvM[tipos[i]];var gan=pv-costo;var mg=pv>0?((gan/pv)*100).toFixed(1):0;h+='<div style="background:#0f0f0f;padding:16px;border-radius:12px"><h4 style="color:#FF6B35;margin-bottom:8px">🍕 '+tipos[i]+'</h4><p style="color:#666;font-size:13px">Costo: <b style="color:white">$'+costo.toLocaleString()+'</b><br>Venta: <b style="color:white">$'+pv.toLocaleString()+'</b><br>Ganancia: <b style="color:#22C55E">$'+gan.toLocaleString()+'</b> ('+mg+'%)</p></div>'}document.getElementById('costoPizza').innerHTML=h;var tb=document.getElementById('tInsumos');if(insumos.length===0){tb.innerHTML='<tr><td colspan="8" class="es">Sin insumos</td></tr>';return}h='';for(var i=0;i<insumos.length;i++){var x=insumos[i];var cp=(x.precio||0)*(x.usoPorPizza||0);h+='<tr><td><b>'+x.nombre+'</b></td><td>'+(x.marca||'-')+'</td><td>'+x.unidad+'</td><td>$'+x.precio.toLocaleString()+'</td><td>'+x.stock+'</td><td>'+(x.usoPorPizza||0)+'</td><td style="color:#F59E0B">$'+cp.toLocaleString()+'</td><td><button class="btn bsm bs" onclick="editInsumo(\''+x.id+'\')">✏️</button> <button class="btn bsm bd" onclick="deleteInsumo(\''+x.id+'\')">🗑️</button></td></tr>'}tb.innerHTML=h};
@@ -385,9 +318,9 @@ var enP=0;for(var i=0;i<pedidos.length;i++){if(pedidos[i].estado==='En proceso')
 document.getElementById('kpiPM').textContent='$'+tv.toLocaleString();document.getElementById('kpiGN').textContent='$'+gan.toLocaleString();document.getElementById('kpiCL').textContent=clientes.length;document.getElementById('kpiDE').textContent='$'+Math.max(0,td).toLocaleString();document.getElementById('kpiEP').textContent=enP;document.getElementById('kpiPZ').textContent=totalPizzas;
 if(ch1)ch1.destroy();if(ch2)ch2.destroy();
 var tipos={};pedidos.forEach(function(p){p.items.forEach(function(it){tipos[it.tipo]=(tipos[it.tipo]||0)+it.subtotal})});
-ch1=new Chart(document.getElementById('cTipo'),{type:'bar',{labels:Object.keys(tipos),datasets:[{label:'Ventas',Object.values(tipos),backgroundColor:['#FF6B35','#FFD700'],borderRadius:8}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{grid:{color:'rgba(255,255,255,0.05)'},ticks:{color:'#a0a0c0'}},x:{grid:{display:false},ticks:{color:'#a0a0c0'}}}}});
+ch1=new Chart(document.getElementById('cTipo'),{type:'bar',data:{labels:Object.keys(tipos),datasets:[{label:'Ventas',data:Object.values(tipos),backgroundColor:['#FF6B35','#FFD700'],borderRadius:8}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{grid:{color:'rgba(255,255,255,0.05)'},ticks:{color:'#a0a0c0'}},x:{grid:{display:false},ticks:{color:'#a0a0c0'}}}}});
 var canales={};pedidos.forEach(function(p){canales[p.canal]=(canales[p.canal]||0)+p.total});
-ch2=new Chart(document.getElementById('cCanal'),{type:'doughnut',{labels:Object.keys(canales),datasets:[{data:Object.values(canales),backgroundColor:['#3B82F6','#A855F7']}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:'#a0a0c0'}}}}});
+ch2=new Chart(document.getElementById('cCanal'),{type:'doughnut',data:{labels:Object.keys(canales),datasets:[{data:Object.values(canales),backgroundColor:['#3B82F6','#A855F7']}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:'#a0a0c0'}}}}});
 var dv=document.getElementById('dPedidos');var sorted=pedidos.slice().sort(function(a,b){return b.fecha>a.fecha?1:-1}).slice(0,10);if(sorted.length===0){dv.innerHTML='<tr><td colspan="6" class="es">Sin pedidos</td></tr>';return}var h='';for(var i=0;i<sorted.length;i++){var p=sorted[i];var cl=null;for(var j=0;j<clientes.length;j++){if(clientes[j].id===p.clienteId){cl=clientes[j];break}}var ep=getEP(p);var pb=ep==='Pagado'?'ba-p':(ep==='Pago Parcial'?'ba-pp':'ba-pn');h+='<tr><td>'+fmt(p.fecha)+'</td><td>'+(cl?cl.nombre:'N/A')+'</td><td>'+getItemsSummary(p.items)+'</td><td>$'+p.total.toLocaleString()+'</td><td><span class="ba '+getStatusBadge(p.estado)+'">'+p.estado+'</span></td><td><span class="ba '+pb+'">'+ep+'</span></td></tr>'}dv.innerHTML=h;
 }
 
@@ -395,11 +328,11 @@ window.showRT=function(t,btn){var rr=document.querySelectorAll('[id^="r-"]');for
 window.renderReportes=async function(){
 var pedidos=await dbGet(TBL);var clientes=await dbGet('clientes');var insumos=await dbGet('insumos');
 var meses={};pedidos.forEach(function(p){var m=p.fecha?p.fecha.substring(0,7):'Sin fecha';meses[m]=(meses[m]||0)+p.total});var sk=Object.keys(meses).sort();
-if(ch3)ch3.destroy();ch3=new Chart(document.getElementById('cMensual'),{type:'line',data:{labels:sk,datasets:[{label:'Pedidos',sk.map(function(m){return meses[m]}),borderColor:'#FF6B35',backgroundColor:'rgba(255,107,53,0.1)',fill:true,tension:0.4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#a0a0c0'}}},scales:{y:{grid:{color:'rgba(255,255,255,0.05)'},ticks:{color:'#a0a0c0'}},x:{grid:{display:false},ticks:{color:'#a0a0c0'}}}}});
+if(ch3)ch3.destroy();ch3=new Chart(document.getElementById('cMensual'),{type:'line',data:{labels:sk,datasets:[{label:'Pedidos',data:sk.map(function(m){return meses[m]}),borderColor:'#FF6B35',backgroundColor:'rgba(255,107,53,0.1)',fill:true,tension:0.4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#a0a0c0'}}},scales:{y:{grid:{color:'rgba(255,255,255,0.05)'},ticks:{color:'#a0a0c0'}},x:{grid:{display:false},ticks:{color:'#a0a0c0'}}}}});
 var ti=pedidos.reduce(function(s,p){return s+p.total},0);var ci=0;var totalItems=0;pedidos.forEach(function(p){totalItems+=getTotalItems(p.items)});insumos.forEach(function(x){ci+=totalItems*(x.usoPorPizza||0)*x.precio});var gn=ti-ci;var mg=ti>0?((gn/ti)*100).toFixed(1):0;document.getElementById('rentCont').innerHTML='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:16px"><div style="background:#0f0f0f;padding:16px;border-radius:12px"><p style="color:#666;font-size:12px">Ingresos</p><p style="font-size:24px;font-weight:800;color:white">$'+ti.toLocaleString()+'</p></div><div style="background:#0f0f0f;padding:16px;border-radius:12px"><p style="color:#666;font-size:12px">Costo</p><p style="font-size:24px;font-weight:800;color:#EF4444">$'+ci.toLocaleString()+'</p></div><div style="background:#0f0f0f;padding:16px;border-radius:12px"><p style="color:#666;font-size:12px">Ganancia</p><p style="font-size:24px;font-weight:800;color:#22C55E">$'+gn.toLocaleString()+'</p></div><div style="background:#0f0f0f;padding:16px;border-radius:12px"><p style="color:#666;font-size:12px">Margen</p><p style="font-size:24px;font-weight:800;color:#FFD700">'+mg+'%</p></div></div><div style="height:24px;background:#0f0f0f;border-radius:12px;overflow:hidden"><div style="width:'+mg+'%;height:100%;background:linear-gradient(90deg,#22C55E,#4ADE80);border-radius:12px"></div></div>';
 var cv={};pedidos.forEach(function(p){cv[p.clienteId]=(cv[p.clienteId]||0)+p.total});var top=Object.entries(cv).map(function(entry){var id=entry[0],t=entry[1];var nombre='N/A';for(var i=0;i<clientes.length;i++){if(clientes[i].id===id){nombre=clientes[i].nombre;break}}return{n:nombre,t:t}}).sort(function(a,b){return b.t-a.t}).slice(0,5);
-if(ch4)ch4.destroy();ch4=new Chart(document.getElementById('cCliTop'),{type:'bar',{labels:top.map(function(x){return x.n}),datasets:[{label:'Compras',top.map(function(x){return x.t}),backgroundColor:['#FF6B35','#FF8F5E','#FFB088','#FFD0B5','#FFE8D8'],borderRadius:8}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{color:'rgba(255,255,255,0.05)'},ticks:{color:'#a0a0c0'}},y:{grid:{display:false},ticks:{color:'#a0a0c0'}}}}});
-var pv={};pedidos.forEach(function(p){p.items.forEach(function(it){pv[it.tipo]=(pv[it.tipo]||0)+it.cantidad})});if(ch5)ch5.destroy();ch5=new Chart(document.getElementById('cProd'),{type:'pie',{labels:Object.keys(pv),datasets:[{data:Object.values(pv),backgroundColor:['#FF6B35','#FFD700','#22C55E','#3B82F6']}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:'#a0a0c0'}}}}});
+if(ch4)ch4.destroy();ch4=new Chart(document.getElementById('cCliTop'),{type:'bar',data:{labels:top.map(function(x){return x.n}),datasets:[{label:'Compras',data:top.map(function(x){return x.t}),backgroundColor:['#FF6B35','#FF8F5E','#FFB088','#FFD0B5','#FFE8D8'],borderRadius:8}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{color:'rgba(255,255,255,0.05)'},ticks:{color:'#a0a0c0'}},y:{grid:{display:false},ticks:{color:'#a0a0c0'}}}}});
+var pv={};pedidos.forEach(function(p){p.items.forEach(function(it){pv[it.tipo]=(pv[it.tipo]||0)+it.cantidad})});if(ch5)ch5.destroy();ch5=new Chart(document.getElementById('cProd'),{type:'pie',data:{labels:Object.keys(pv),datasets:[{data:Object.values(pv),backgroundColor:['#FF6B35','#FFD700','#22C55E','#3B82F6']}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:'#a0a0c0'}}}}});
 };
 
 window.exportData=async function(){var d={clientes:await dbGet('clientes'),pedidos:await dbGet(TBL),insumos:await dbGet('insumos'),marcas:await dbGet('marcas'),pagos:await dbGet('pagos')};var blob=new Blob([JSON.stringify(d,null,2)],{type:'application/json'});var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='metele_backup_'+new Date().toISOString().split('T')[0]+'.json';a.click();URL.revokeObjectURL(a.href);notify('Datos exportados')};
