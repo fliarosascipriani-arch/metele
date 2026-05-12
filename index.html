@@ -184,19 +184,20 @@ async function deleteVentaWithPagos(vid){var pagos=await dbGet('pagos');for(var 
 function getStatusBadge(estado){var map={'Pendiente':'ba-pn','En proceso':'ba-pr','Entregado':'ba-e'};return map[estado]||'ba-pn'}
 function getItemsSummary(items){if(!items||items.length===0)return'';var h='';for(var i=0;i<items.length;i++){h+='<span class="bi">'+items[i].tipo+' x'+items[i].cantidad+'</span>'}return h}
 
-/* ========== CÁLCULO DE DEUDA SIEMPRE FRESCO ========== */
 function getDeudaRestante(pedido, pagos){
-  if(getEP(pedido)==='Pagado')return 0;
+  var total=pedido.total||0;
   var pagado=0;
   for(var i=0;i<pagos.length;i++){if(pagos[i].ventaId===pedido.id)pagado+=pagos[i].monto}
-  return Math.max(0, (pedido.total||0) - pagado);
+  if(pedido.estadoPago==='Pagado')return 0;
+  return Math.max(0, total - pagado);
 }
 
 function calcDeudaCliente(cid, pedidos, pagos){
   var deudaTotal=0;
   for(var i=0;i<pedidos.length;i++){
-    if(pedidos[i].clienteId!==cid)continue;
-    deudaTotal+=getDeudaRestante(pedidos[i], pagos);
+    if(pedidos[i].clienteId===cid){
+      deudaTotal+=getDeudaRestante(pedidos[i], pagos);
+    }
   }
   return deudaTotal;
 }
@@ -233,11 +234,13 @@ var total=0;for(var i=0;i<items.length;i++)total+=items[i].subtotal;
 var cid=document.getElementById('pCliente').value;if(!cid){notify('Seleccioná un cliente','error');return}
 var d={id:id||genId(),clienteId:cid,items:items,total:total,canal:document.getElementById('pCanal').value,estado:document.getElementById('pEstado').value,estadoPago:document.getElementById('pPago').value,fechaPagoEstimado:document.getElementById('pFPago').value||null,fecha:document.getElementById('pFecha').value,notas:document.getElementById('pNotas').value.trim()};
 
-// Verificar pagos existentes para ajustar estado automáticamente
 if(id){
-  var pagos=await dbGet('pagos');var pagado=0;
-  for(var i=0;i<pagos.length;i++){if(pagos[i].ventaId===id)pagado+=pagos[i].monto}
-  if(pagado>=total)d.estadoPago='Pagado';
+  var pagosExistentes=await dbGet('pagos');
+  var yaPagado=0;
+  for(var i=0;i<pagosExistentes.length;i++){if(pagosExistentes[i].ventaId===id)yaPagado+=pagosExistentes[i].monto}
+  if(yaPagado>0 && yaPagado<total){
+    d.estadoPago='Pago Parcial';
+  }
 }
 
 var ok=id?await dbUpdate(TBL,id,d):await dbInsert(TBL,d);
@@ -281,11 +284,11 @@ window.deletePago=async function(id){if(!confirm('¿Eliminar?'))return;if(await 
 window.renderDeudas=async function(){
 var pedidos=await dbGet(TBL);var clientes=await dbGet('clientes');var pagos=await dbGet('pagos');
 var hoy=new Date().toISOString().split('T')[0];var pend=[];for(var i=0;i<pedidos.length;i++){if(getEP(pedidos[i])!=='Pagado')pend.push(pedidos[i])}
-var totD=0,venc=0;for(var i=0;i<pend.length;i++){var p=pend[i];var pag=0;for(var j=0;j<pagos.length;j++){if(pagos[j].ventaId===p.id)pag+=pagos[j].monto}var rest=getDeudaRestante(p,pagos);totD+=rest;if(p.fechaPagoEstimado&&p.fechaPagoEstimado<hoy)venc+=rest}
+var totD=0,venc=0;for(var i=0;i<pend.length;i++){var p=pend[i];var rest=getDeudaRestante(p,pagos);totD+=rest;if(p.fechaPagoEstimado&&p.fechaPagoEstimado<hoy)venc+=rest}
 var mes=hoy.substring(0,7);var cob=0;for(var i=0;i<pagos.length;i++){if(pagos[i].fecha&&pagos[i].fecha.substring(0,7)===mes)cob+=pagos[i].monto}
 document.getElementById('kpiTD').textContent='$'+totD.toLocaleString();document.getElementById('kpiDV').textContent='$'+venc.toLocaleString();document.getElementById('kpiCM').textContent='$'+cob.toLocaleString();
 var tb=document.getElementById('tDeudas');if(pend.length===0){tb.innerHTML='<tr><td colspan="8" class="es">🎉 ¡Sin deudas!</td></tr>';return}
-var h='';for(var i=0;i<pend.length;i++){var p=pend[i];var cl=null;for(var j=0;j<clientes.length;j++){if(clientes[j].id===p.clienteId){cl=clientes[j];break}}var pag=0;for(var j=0;j<pagos.length;j++){if(pagos[j].ventaId===p.id)pag+=pagos[j].monto}var rest=getDeudaRestante(p,pagos);var vto=p.fechaPagoEstimado&&p.fechaPagoEstimado<hoy;var desc='';for(var j=0;j<p.items.length;j++){desc+=p.items[j].tipo+' x'+p.items[j].cantidad+' '}var ep=getEP(p);var pb=ep==='Pago Parcial'?'ba-pp':'ba-pn';h+='<tr><td>'+(cl?cl.nombre:'N/A')+'</td><td>'+desc.trim()+'</td><td>$'+p.total.toLocaleString()+'</td><td>$'+pag.toLocaleString()+'</td><td style="color:#EF4444;font-weight:700">$'+rest.toLocaleString()+'</td><td>'+(p.fechaPagoEstimado?fmt(p.fechaPagoEstimado):'-')+'</td><td><span class="ba '+pb+'">'+(ep==='Pago Parcial'?'Parcial':'Pendiente')+'</span></td><td><button class="btn bsm bg" onclick="quickPay(\''+p.id+'\','+rest+')">💵</button></td></tr>'}
+var h='';for(var i=0;i<pend.length;i++){var p=pend[i];var cl=null;for(var j=0;j<clientes.length;j++){if(clientes[j].id===p.clienteId){cl=clientes[j];break}}var pagado=p.total-getDeudaRestante(p,pagos);var rest=getDeudaRestante(p,pagos);var vto=p.fechaPagoEstimado&&p.fechaPagoEstimado<hoy;var desc='';for(var j=0;j<p.items.length;j++){desc+=p.items[j].tipo+' x'+p.items[j].cantidad+' '}var ep=getEP(p);var pb=ep==='Pago Parcial'?'ba-pp':'ba-pn';h+='<tr><td>'+(cl?cl.nombre:'N/A')+'</td><td>'+desc.trim()+'</td><td>$'+p.total.toLocaleString()+'</td><td>$'+pagado.toLocaleString()+'</td><td style="color:#EF4444;font-weight:700">$'+rest.toLocaleString()+'</td><td>'+(p.fechaPagoEstimado?fmt(p.fechaPagoEstimado):'-')+'</td><td><span class="ba '+pb+'">'+(ep==='Pago Parcial'?'Parcial':'Pendiente')+'</span></td><td><button class="btn bsm bg" onclick="quickPay(\''+p.id+'\','+rest+')">💵</button></td></tr>'}
 tb.innerHTML=h;
 var tp=document.getElementById('tPagos');var ps=pagos.slice().sort(function(a,b){return b.fecha>a.fecha?1:-1});if(ps.length===0){tp.innerHTML='<tr><td colspan="5" class="es">Sin pagos</td></tr>';return}
 var h2='';for(var i=0;i<ps.length;i++){var pa=ps[i];var vt=null;for(var j=0;j<pedidos.length;j++){if(pedidos[j].id===pa.ventaId){vt=pedidos[j];break}}var cl=null;if(vt){for(var j=0;j<clientes.length;j++){if(clientes[j].id===vt.clienteId){cl=clientes[j];break}}}h2+='<tr><td>'+fmt(pa.fecha)+'</td><td>'+(cl?cl.nombre:'N/A')+'</td><td style="color:#22C55E;font-weight:700">$'+pa.monto.toLocaleString()+'</td><td>'+pa.metodo+'</td><td><button class="btn bsm bd" onclick="deletePago(\''+pa.id+'\')">🗑️</button></td></tr>'}
@@ -310,7 +313,7 @@ async function updateDashboard(){
 var pedidos=await dbGet(TBL);var clientes=await dbGet('clientes');var pagos=await dbGet('pagos');var insumos=await dbGet('insumos');
 var mes=new Date().toISOString().substring(0,7);var pm=pedidos.filter(function(p){return p.fecha&&p.fecha.substring(0,7)===mes});var tv=pm.reduce(function(s,p){return s+p.total},0);
 var ct=0;var totalPizzas=0;for(var i=0;i<pedidos.length;i++){for(var j=0;j<pedidos[i].items.length;j++){totalPizzas+=pedidos[i].items[j].cantidad}}for(var i=0;i<insumos.length;i++){var u=pedidos.reduce(function(s,p){return s+getTotalItems(p.items)*(insumos[i].usoPorPizza||0)},0);ct+=u*insumos[i].precio}
-var gan=tv-ct;var td=0;var pend=pedidos.filter(function(p){return getEP(p)!=='Pagado'});for(var i=0;i<pend.length;i++){var pa=pagos.filter(function(pg){return pg.ventaId===pend[i].id}).reduce(function(s,pg){return s+pg.monto},0);td+=pend[i].total-pa}
+var gan=tv-ct;var td=0;var pend=pedidos.filter(function(p){return getEP(p)!=='Pagado'});for(var i=0;i<pend.length;i++){td+=getDeudaRestante(pend[i],pagos)}
 var enP=0;for(var i=0;i<pedidos.length;i++){if(pedidos[i].estado==='En proceso')enP++}
 document.getElementById('kpiPM').textContent='$'+tv.toLocaleString();document.getElementById('kpiGN').textContent='$'+gan.toLocaleString();document.getElementById('kpiCL').textContent=clientes.length;document.getElementById('kpiDE').textContent='$'+Math.max(0,td).toLocaleString();document.getElementById('kpiEP').textContent=enP;document.getElementById('kpiPZ').textContent=totalPizzas;
 if(ch1)ch1.destroy();if(ch2)ch2.destroy();
