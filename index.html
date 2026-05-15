@@ -184,7 +184,7 @@ function normalize(row) {
     if (k === 'insumo_tipo') { o.insumoTipo = row[k]; continue; }
     if (k === 'estado_pago') { o.estadoPago = row[k]; continue; }
     if (k === 'cantidad') { o.cantidadOld = parseInt(row[k]) || 0; continue; }
-    if (k === 'tipo') { o.tipoOld = row[k]; continue; }
+    if (k === 'tipo') { o.tipo = row[k]; continue; } // Fixed mapping
     if (k === 'items') {
       if (typeof row[k] === 'string') { try { o.items = JSON.parse(row[k]); } catch(e) { o.items = []; } }
       else if (Array.isArray(row[k])) { o.items = row[k]; }
